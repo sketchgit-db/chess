@@ -1,13 +1,23 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import Board from "./Board";
+import { Alert } from "react-bootstrap";
+
+import "../styles.css";
 
 const Game = (props) => {
-
-  const {gameCode} = props.match.params;
+  const { gameCode } = props.match.params;
+  const [show, setShow] = React.useState(true);
 
   return (
-    <div>
-      Welcome to Room {gameCode}
+    <div className="game">
+      <Alert 
+        variant="success" 
+        dismissible 
+        show={show}
+        onClose={() => setShow(false)}>
+        Welcome to the game
+      </Alert>
+      <Board/>
     </div>
   );
 };
