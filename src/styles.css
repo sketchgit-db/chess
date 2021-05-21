@@ -14,7 +14,8 @@
 }
 
 .board {
-  outline: 1px solid black;
+  margin: 4vh 4vw;
+  outline: 30px solid brown;
   width: 80vmin;
   height: 80vmin;
 }
@@ -23,22 +24,40 @@
   width: 10vmin;
   height: 10vmin;
   float: left;
-  background-color: white;
-  outline: 1px solid black;
+  font-size: 8vmin;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fabc4f;
+  outline: 1px solid #fabc4f;
 }
 
 .white:hover {
-  background-color: silver;
+  background-color: #cd963f;
+  outline: 1px solid #cd963f;
 }
 
 .black {
   width: 10vmin;
   height: 10vmin;
   float: left;
-  background-color: saddlebrown;
-  outline: 1px solid black;
+  font-size: 8vmin;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #a95517;
+  outline: 1px solid #a95517;
 }
 
 .black:hover {
-  background-color:sienna;
+  background-color: #895517;
+  outline: 1px solid #895517;
+}
+
+.white-piece {
+  color: white;
+}
+
+.black-piece {
+  color: black;
 }
