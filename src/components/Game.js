@@ -9,11 +9,14 @@ const Game = (props) => {
 
   return (
     <div className="game">
-      <Alert 
-        variant="success">
-        Welcome to the game
-      </Alert>
-      <Board/>
+      <div className="panel">
+        <Board />
+      </div>
+      <div className="panel">
+        <Alert variant="success">
+          <Alert.Heading>Welcome to the game</Alert.Heading>
+        </Alert>
+      </div>
     </div>
   );
 };

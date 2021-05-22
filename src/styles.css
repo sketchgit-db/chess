@@ -9,15 +9,73 @@
 
 .game {
   padding: 10px 20px;
+}
+
+.panel {
+  float: left;
+  width: 50%;
+  padding-top: 2vmin;
+  text-align: center;
+}
+
+@media screen and (max-width: 100vmin) {
+  .panel {
+    width: 100%;
+  }
+}
+
+.outline-1 {
+  width: 93vmin;
+  height: 93vmin;
+  background-color: black;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+
+.outline-2 {
+  width: 93vmin;
+  height: 88vmin;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
 }
 
 .board {
-  margin: 4vh 4vw;
-  outline: 30px solid brown;
   width: 80vmin;
   height: 80vmin;
+  justify-content: center;
+  align-items: center;
+}
+
+.rank-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ranks {
+  color: white;
+  font-size: 4vmin;
+  user-select: none;
+  text-align: center;
+  margin: 2vmin;
+}
+
+.file-list {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.files {
+  color: white;
+  font-size: 4vmin;
+  user-select: none;
+  text-align: center;
+  margin-left: 4vmin;
+  margin-right: 4vmin;
 }
 
 .white {
@@ -29,12 +87,11 @@
   justify-content: center;
   align-items: center;
   background-color: #fabc4f;
-  outline: 1px solid #fabc4f;
+  user-select: none;
 }
 
 .white:hover {
   background-color: #cd963f;
-  outline: 1px solid #cd963f;
 }
 
 .black {
@@ -46,12 +103,11 @@
   justify-content: center;
   align-items: center;
   background-color: #a95517;
-  outline: 1px solid #a95517;
+  user-select: none;
 }
 
 .black:hover {
   background-color: #895517;
-  outline: 1px solid #895517;
 }
 
 .white-piece {
