@@ -14,7 +14,7 @@ import "../styles.css";
 
 const GAME_CODE_LENGTH = 6;
 
-const Home = () => {
+const Home: React.FC = () => {
   const history = useHistory();
   const [gameCode, setGameCode] = React.useState("");
   const [formInput, setFormInput] = React.useState("");
@@ -36,17 +36,22 @@ const Home = () => {
 
   const handleCreateGame = () => {
     history.push(`/${gameCode}`);
-  }
+  };
 
   const handleJoinGame = () => {
-    if (gameCode === formInput)
-      history.push(`/${gameCode}`);
+    if (gameCode === formInput) history.push(`/${gameCode}`);
   };
 
   return (
     <div className="home-container">
-      <Card className="text-center" border="secondary" style={{ width: "400px"}}>
-        <Card.Header style={{ fontSize: "1.5em" }}>Let's start playing</Card.Header>
+      <Card
+        className="text-center"
+        border="secondary"
+        style={{ width: "400px" }}
+      >
+        <Card.Header style={{ fontSize: "1.5em" }}>
+          Let's start playing
+        </Card.Header>
         <Card.Body>
           <Button variant="outline-success" size="lg" onClick={showCreateGame}>
             Create a new game
