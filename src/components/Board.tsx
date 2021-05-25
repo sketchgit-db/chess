@@ -2,13 +2,49 @@ import React from "react";
 import Square from "./Square";
 import PieceDetails from "../PieceDetails";
 import Piece, { PieceProps } from "../Piece";
+import Hints from "../Hints";
 import "../styles.css";
 
+export interface BoardStatusProps {
+  color: string;
+  setColor: any;
+}
+
 const Board: React.FC = () => {
-  const BoardConfig: Array<PieceProps> = [];
+  const PieceConfig: Array<PieceProps> = [];
+  const squares: any = [];
+
+  const initBoardColors = () => {
+    const BoardConfig: Array<BoardStatusProps> = [];
+    for (let index = 0; index < 64; index++) {
+      if (Math.floor(index / 8 + index) % 2) {
+        const [color, setColor] = React.useState("black");
+        BoardConfig.push({
+          color: color,
+          setColor: setColor,
+        });
+      } else {
+        const [color, setColor] = React.useState("white");
+        BoardConfig.push({
+          color: color,
+          setColor: setColor,
+        });
+      }
+    }
+    return BoardConfig;
+  };
+
+  const BoardConfig = initBoardColors();
+  const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
+
+  const squareOnClickHandler = (piece: PieceProps) => {
+    const moves = new Hints(BoardConfig);
+    moves.hideHints(hintCells);
+    const validMoves = moves.showHints(piece);
+    updateHintCells(validMoves);
+  };
 
   const renderSquares = () => {
-    const squares = [];
     const white_row = [
       PieceDetails.WHITE_ROOK,
       PieceDetails.WHITE_KNIGHT,
@@ -39,12 +75,13 @@ const Board: React.FC = () => {
       );
       squares.push(
         <Square
-          color={Math.floor(index / 8 + index) % 2 ? "black" : "white"}
+          color={BoardConfig[index].color}
           position={index}
           piece={_piece}
+          onClick={squareOnClickHandler}
         />
       );
-      BoardConfig.push(_piece);
+      PieceConfig.push(_piece);
     }
     for (let index = 8; index < 16; index++) {
       const _piece = new Piece(
@@ -55,23 +92,25 @@ const Board: React.FC = () => {
       );
       squares.push(
         <Square
-          color={Math.floor(index / 8 + index) % 2 ? "black" : "white"}
+          color={BoardConfig[index].color}
           position={index}
           piece={_piece}
+          onClick={squareOnClickHandler}
         />
       );
-      BoardConfig.push(_piece);
+      PieceConfig.push(_piece);
     }
     for (let index = 16; index < 48; index++) {
-      const _piece = new Piece("empty-cell", null, "", -1);
+      const _piece = new Piece("empty-cell", null, "", index);
       squares.push(
         <Square
-          color={Math.floor(index / 8 + index) % 2 ? "black" : "white"}
+          color={BoardConfig[index].color}
           position={index}
           piece={_piece}
+          onClick={squareOnClickHandler}
         />
       );
-      BoardConfig.push(_piece);
+      PieceConfig.push(_piece);
     }
     for (let index = 48; index < 56; index++) {
       const _piece = new Piece(
@@ -82,12 +121,13 @@ const Board: React.FC = () => {
       );
       squares.push(
         <Square
-          color={Math.floor(index / 8 + index) % 2 ? "black" : "white"}
+          color={BoardConfig[index].color}
           position={index}
           piece={_piece}
+          onClick={squareOnClickHandler}
         />
       );
-      BoardConfig.push(_piece);
+      PieceConfig.push(_piece);
     }
     for (let index = 56; index < 64; index++) {
       const _piece = new Piece(
@@ -98,12 +138,13 @@ const Board: React.FC = () => {
       );
       squares.push(
         <Square
-          color={Math.floor(index / 8 + index) % 2 ? "black" : "white"}
+          color={BoardConfig[index].color}
           position={index}
           piece={_piece}
+          onClick={squareOnClickHandler}
         />
       );
-      BoardConfig.push(_piece);
+      PieceConfig.push(_piece);
     }
     return squares;
   };

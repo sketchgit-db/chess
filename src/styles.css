@@ -110,6 +110,18 @@
   background-color: #895517;
 }
 
+.selected {
+  width: 10vmin;
+  height: 10vmin;
+  float: left;
+  font-size: 8vmin;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(200, 255, 47);
+  user-select: none;
+}
+
 .white-piece {
   background-color: transparent;
   border: none;

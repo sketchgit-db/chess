@@ -7,7 +7,7 @@ const io = require("socket.io")(server, {
 
 const PORT = 4000;
 
-io.on("connection", (socket) => {
+io.on("connection", (socket: any) => {
 
   // Join a game
   const { gameCode } = socket.handshake.query;

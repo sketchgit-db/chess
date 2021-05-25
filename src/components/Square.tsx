@@ -1,4 +1,4 @@
-import React from "react";
+import React, { MouseEventHandler } from "react";
 import { PieceProps } from "../Piece";
 import "../styles.css";
 
@@ -6,6 +6,7 @@ export interface SquareProps {
   color: string;
   position: number;
   piece: PieceProps;
+  onClick: ((piece: PieceProps) => any);
 }
 
 const Square: React.FC<SquareProps> = (props) => {
@@ -14,12 +15,13 @@ const Square: React.FC<SquareProps> = (props) => {
   const piece: PieceProps = props.piece;
 
   const showMoves = () => {
+    props.onClick(piece);
     if (piece.pieceName !== null) {
-      const name = piece.pieceName.split("-")[1];
-      const color = piece.pieceName.split("-")[0];
+      // const name = piece.pieceName.split("-")[1];
+      // const color = piece.pieceName.split("-")[0];
       console.log(
-        `${piece.pieceName}: ${String.fromCharCode(97 + (position % 8))}${
-          1 + Math.floor(position / 8)
+        `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
+          1 + Math.floor(piece.position / 8)
         }`
       );
     }
