@@ -38,7 +38,7 @@ const Board: React.FC = () => {
   const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
 
   const squareOnClickHandler = (piece: PieceProps) => {
-    const moves = new Hints(BoardConfig);
+    const moves = new Hints(BoardConfig, PieceConfig);
     moves.hideHints(hintCells);
     const validMoves = moves.showHints(piece);
     updateHintCells(validMoves);

@@ -17,8 +17,6 @@ const Square: React.FC<SquareProps> = (props) => {
   const showMoves = () => {
     props.onClick(piece);
     if (piece.pieceName !== null) {
-      // const name = piece.pieceName.split("-")[1];
-      // const color = piece.pieceName.split("-")[0];
       console.log(
         `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
           1 + Math.floor(piece.position / 8)
