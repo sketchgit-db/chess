@@ -31,6 +31,39 @@ class Moves {
     }
   }
 
+  private checkPawnMoveValidity(x: number, y: number, color: string) {
+    if (x >= 0 && x < 8 && y >= 0 && y < 8) {
+      const index = this.getIndex(x, y);
+      if (this.pieceStatus[index].pieceName === null) {
+        // empty cell
+        return [true, true];
+      } else {
+        // self or opponent piece in straight line
+        return [false, false];
+      }
+    } else {
+      return [false, true];
+    }
+  }
+
+  private checkPawnCaptureValidity(x: number, y: number, color: string) {
+    if (x >= 0 && x < 8 && y >= 0 && y < 8) {
+      const index = this.getIndex(x, y);
+      if (
+        this.pieceStatus[index].pieceName !== null &&
+        this.getPieceColor(this.pieceStatus[index]) !== color
+      ) {
+        // opponent cell
+        return [true, true];
+      } else {
+        // self or empty cell
+        return [false, false];
+      }
+    } else {
+      return [false, true];
+    }
+  }
+
   private getCoordinates(index: number) {
     return [Math.floor(index / 8), index % 8];
   }
@@ -42,28 +75,48 @@ class Moves {
   public getPawnMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>();
+    let moves = new Array<PieceProps>(piece);
     if (color === "white") {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x + 1, y, color);
+      // Pawn free movement
+      let [currMove, nextMove] = this.checkPawnMoveValidity(x + 1, y, color);
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x + 1, y)]);
       }
       if (nextMove === true) {
-        let [currMove, nextMove] = this.checkCoordinateValidity(x + 2, y, color);
+        let [currMove, nextMove] = this.checkPawnMoveValidity(x + 2, y, color);
         if (x == 1 && currMove) {
           moves.push(this.pieceStatus[this.getIndex(x + 2, y)]);
-        }  
+        }
+      }
+      // Pawn capture
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
+      if (currMove) {
+        moves.push(this.pieceStatus[this.getIndex(x + 1, y + 1)]);
+      }
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y - 1, color);
+      if (currMove) {
+        moves.push(this.pieceStatus[this.getIndex(x + 1, y - 1)]);
       }
     } else {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x - 1, y, color);
+      // Pawn free movement
+      let [currMove, nextMove] = this.checkPawnMoveValidity(x - 1, y, color);
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x - 1, y)]);
       }
       if (nextMove === true) {
-        let [currMove, nextMove] = this.checkCoordinateValidity(x - 2, y, color);
+        let [currMove, nextMove] = this.checkPawnMoveValidity(x - 2, y, color);
         if (x == 6 && currMove) {
           moves.push(this.pieceStatus[this.getIndex(x - 2, y)]);
-        }  
+        }
+      }
+      // Pawn capture
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y + 1, color);
+      if (currMove) {
+        moves.push(this.pieceStatus[this.getIndex(x - 1, y + 1)]);
+      }
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y - 1, color);
+      if (currMove) {
+        moves.push(this.pieceStatus[this.getIndex(x - 1, y - 1)]);
       }
     }
     return moves;
@@ -72,7 +125,7 @@ class Moves {
   public getRookMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>();
+    let moves = new Array<PieceProps>(piece);
     for (let dx = 1; dx < 8 - x; dx++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
@@ -123,11 +176,15 @@ class Moves {
   public getKnightMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>();
+    let moves = new Array<PieceProps>(piece);
     const dx = [2, 2, -2, -2, 1, 1, -1, -1];
     const dy = [1, -1, 1, -1, 2, -2, 2, -2];
     for (let index = 0; index < 8; index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x + dx[index], y + dy[index], color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x + dx[index],
+        y + dy[index],
+        color
+      );
       if (currMove) {
         moves.push(
           this.pieceStatus[this.getIndex(x + dx[index], y + dy[index])]
@@ -140,9 +197,13 @@ class Moves {
   public getBishopMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>();
+    let moves = new Array<PieceProps>(piece);
     for (let index = 1; index < 8 - Math.max(x, y); index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x + index, y + index, color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x + index,
+        y + index,
+        color
+      );
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x + index, y + index)]);
         if (nextMove === false) {
@@ -153,7 +214,11 @@ class Moves {
       }
     }
     for (let index = -1; index >= -Math.min(x, y); index--) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x + index, y + index, color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x + index,
+        y + index,
+        color
+      );
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x + index, y + index)]);
         if (nextMove === false) {
@@ -164,7 +229,11 @@ class Moves {
       }
     }
     for (let index = 1; index <= Math.min(x, 7 - y); index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x - index, y + index, color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x - index,
+        y + index,
+        color
+      );
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x - index, y + index)]);
         if (nextMove === false) {
@@ -175,7 +244,11 @@ class Moves {
       }
     }
     for (let index = -1; index >= -Math.min(7 - x, y); index--) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x - index, y + index, color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x - index,
+        y + index,
+        color
+      );
       if (currMove) {
         moves.push(this.pieceStatus[this.getIndex(x - index, y + index)]);
         if (nextMove === false) {
@@ -198,11 +271,15 @@ class Moves {
   public getKingMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>();
+    let moves = new Array<PieceProps>(piece);
     const dx = [1, 1, 1, -1, -1, -1, 0, 0];
     const dy = [0, 1, -1, 0, 1, -1, 1, -1];
     for (let index = 0; index < 8; index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(x + dx[index], y + dy[index], color);
+      let [currMove, nextMove] = this.checkCoordinateValidity(
+        x + dx[index],
+        y + dy[index],
+        color
+      );
       if (currMove) {
         moves.push(
           this.pieceStatus[this.getIndex(x + dx[index], y + dy[index])]

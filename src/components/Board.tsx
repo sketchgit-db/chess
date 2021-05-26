@@ -6,6 +6,8 @@ import Hints from "../Hints";
 import "../styles.css";
 
 export interface BoardStatusProps {
+  piece: PieceProps;
+  setPiece: any;
   color: string;
   setColor: any;
 }
@@ -13,38 +15,33 @@ export interface BoardStatusProps {
 const Board: React.FC = () => {
   const PieceConfig: Array<PieceProps> = [];
   const squares: any = [];
+  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1);
+
+  const updateBoardConfig = (index: number, _piece: PieceProps) => {
+    if (Math.floor(index / 8 + index) % 2) {
+      const [color, setColor] = React.useState("black");
+      const [piece, setPiece] = React.useState(_piece);
+      return {
+        piece: piece,
+        setPiece: setPiece,
+        color: color,
+        setColor: setColor,
+      };
+    } else {
+      const [color, setColor] = React.useState("white");
+      const [piece, setPiece] = React.useState(_piece);
+      return {
+        piece: piece,
+        setPiece: setPiece,
+        color: color,
+        setColor: setColor,
+      };
+    }
+  }
 
   const initBoardColors = () => {
-    const BoardConfig: Array<BoardStatusProps> = [];
-    for (let index = 0; index < 64; index++) {
-      if (Math.floor(index / 8 + index) % 2) {
-        const [color, setColor] = React.useState("black");
-        BoardConfig.push({
-          color: color,
-          setColor: setColor,
-        });
-      } else {
-        const [color, setColor] = React.useState("white");
-        BoardConfig.push({
-          color: color,
-          setColor: setColor,
-        });
-      }
-    }
-    return BoardConfig;
-  };
 
-  const BoardConfig = initBoardColors();
-  const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
-
-  const squareOnClickHandler = (piece: PieceProps) => {
-    const moves = new Hints(BoardConfig, PieceConfig);
-    moves.hideHints(hintCells);
-    const validMoves = moves.showHints(piece);
-    updateHintCells(validMoves);
-  };
-
-  const renderSquares = () => {
+    let BoardConfig: Array<BoardStatusProps> = [];
     const white_row = [
       PieceDetails.WHITE_ROOK,
       PieceDetails.WHITE_KNIGHT,
@@ -73,15 +70,8 @@ const Board: React.FC = () => {
         white_row[index].label,
         index
       );
-      squares.push(
-        <Square
-          color={BoardConfig[index].color}
-          position={index}
-          piece={_piece}
-          onClick={squareOnClickHandler}
-        />
-      );
-      PieceConfig.push(_piece);
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+      PieceConfig.push(BoardConfig[index].piece);
     }
     for (let index = 8; index < 16; index++) {
       const _piece = new Piece(
@@ -90,27 +80,13 @@ const Board: React.FC = () => {
         PieceDetails.WHITE_PAWN.label,
         index
       );
-      squares.push(
-        <Square
-          color={BoardConfig[index].color}
-          position={index}
-          piece={_piece}
-          onClick={squareOnClickHandler}
-        />
-      );
-      PieceConfig.push(_piece);
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+      PieceConfig.push(BoardConfig[index].piece);
     }
     for (let index = 16; index < 48; index++) {
       const _piece = new Piece("empty-cell", null, "", index);
-      squares.push(
-        <Square
-          color={BoardConfig[index].color}
-          position={index}
-          piece={_piece}
-          onClick={squareOnClickHandler}
-        />
-      );
-      PieceConfig.push(_piece);
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+      PieceConfig.push(BoardConfig[index].piece);
     }
     for (let index = 48; index < 56; index++) {
       const _piece = new Piece(
@@ -119,15 +95,8 @@ const Board: React.FC = () => {
         PieceDetails.BLACK_PAWN.label,
         index
       );
-      squares.push(
-        <Square
-          color={BoardConfig[index].color}
-          position={index}
-          piece={_piece}
-          onClick={squareOnClickHandler}
-        />
-      );
-      PieceConfig.push(_piece);
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+      PieceConfig.push(BoardConfig[index].piece);
     }
     for (let index = 56; index < 64; index++) {
       const _piece = new Piece(
@@ -136,15 +105,71 @@ const Board: React.FC = () => {
         black_row[index % 8].label,
         index
       );
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+      PieceConfig.push(BoardConfig[index].piece);
+    }
+
+    return BoardConfig;
+  };
+
+  const BoardConfig = initBoardColors();
+  const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
+  const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
+
+  const capture = (from: PieceProps, to: PieceProps) => {
+    const posFrom = from.position, posTo = to.position;
+    console.log(posFrom, posTo);
+    dummyPiece.position = posFrom;
+    from.position = posTo;
+    to.position = posFrom;
+    BoardConfig[posFrom].setPiece(dummyPiece);
+    BoardConfig[posTo].setPiece(from);
+  };
+
+  const makeMove = (from: PieceProps, to: PieceProps) => {
+
+    if (to.pieceName === null) {
+      const posFrom = from.position, posTo = to.position;
+      console.log(posFrom, posTo);
+      to.position = posFrom;
+      from.position = posTo;
+      BoardConfig[posFrom].setPiece(to);
+      BoardConfig[posTo].setPiece(from);
+    } else {
+      capture(from, to);
+    }
+  };
+
+  const checkPossibleMove = (piece: PieceProps) => {
+    const index = piece.position;
+    return (BoardConfig[index].color === "selected");
+  }
+
+  const squareOnClickHandler = (piece: PieceProps) => {
+    console.log(piece);
+    const moves = new Hints(BoardConfig, PieceConfig);
+    if (checkPossibleMove(piece)) {
+      makeMove(clickedPiece, piece);
+      updateClickedPiece(dummyPiece);
+      moves.hideHints(hintCells);
+    } else {
+      updateClickedPiece(piece);
+      moves.hideHints(hintCells);
+      const validMoves = moves.showHints(piece);
+      updateHintCells(validMoves);  
+    }
+  };
+
+  const renderSquares = () => {
+    for (let index = 0; index < 64; index++) {
       squares.push(
         <Square
           color={BoardConfig[index].color}
           position={index}
-          piece={_piece}
+          piece={BoardConfig[index].piece}
           onClick={squareOnClickHandler}
         />
       );
-      PieceConfig.push(_piece);
     }
     return squares;
   };
