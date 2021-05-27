@@ -1,10 +1,29 @@
 import { PieceProps } from "./Piece";
 import Moves from "./Moves";
 
+/**
+ * Class representing the valid movements on UI for a given piece at a given board configuration
+ * Extends the base class `Moves`
+ * @property {any} _cellStatus The state representing the board at the given instance
+ * @property {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+ */
+
 class Hints extends Moves {
+  /**
+   * @constructor
+   * @param {any} _cellStatus The state representing the board at the given instance
+   * @param {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+   */
+
   constructor(_cellStatus: any, _pieceStatus: Array<PieceProps>) {
     super(_cellStatus, _pieceStatus);
   }
+
+  /**
+   * Get the valid moves for a given `piece`
+   * @param {PieceProps} piece The piece whose valid moves are to be found
+   * @returns {Array<PieceProps>} An array containing the valid Moves
+   */
 
   private showValidMoves = (piece: PieceProps) => {
     const index = piece.position;
@@ -38,6 +57,13 @@ class Hints extends Moves {
     return validMoves;
   };
 
+  /**
+   * Public wrapper over the `showValidMoves` function
+   * Get the valid moves for a given `piece`
+   * @param {PieceProps} piece The piece whose valid moves are to be found
+   * @returns {Array<PieceProps>} An array containing the valid Moves
+   */
+
   public showHints = (piece: PieceProps) => {
     if (piece.pieceName !== null) {
       return this.showValidMoves(piece);
@@ -45,6 +71,11 @@ class Hints extends Moves {
       return new Array<PieceProps>();
     }
   };
+
+  /**
+   * Hide the validMoves, usually when a move is made or a different piece is considered
+   * @param {Array<PieceProps>} hintCells Array of valid moves computed using `showHints`
+   */
 
   public hideHints = (hintCells: Array<PieceProps>) => {
     hintCells.forEach((piece) => {
@@ -55,6 +86,10 @@ class Hints extends Moves {
     });
   };
 }
+
+/**
+ * Interface extending Hints
+ */
 
 export interface HintProps extends Hints {}
 

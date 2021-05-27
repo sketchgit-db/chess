@@ -1,10 +1,18 @@
 // https://en.wikipedia.org/wiki/Chess_symbols_in_Unicode
 
+/**
+ * Interface representing the details of the Chess Board Pieces
+ */
+
 export interface PieceDetailsProps {
   pieceName: string;
   label: string;
   value: number;
 }
+
+/**
+ * A record representing the details `PieceDetailsProps` for each Chess Board Piece
+ */
 
 const PieceDetails: Record<any, PieceDetailsProps> = {
   WHITE_PAWN: {
@@ -37,7 +45,6 @@ const PieceDetails: Record<any, PieceDetailsProps> = {
     label: "♔",
     value: 0,
   },
-
   BLACK_PAWN: {
     pieceName: "black-pawn",
     label: "♙",

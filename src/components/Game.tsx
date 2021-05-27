@@ -4,23 +4,40 @@ import { Alert, Card } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
 
 interface RouteParams {
-  gameCode: string;
+  gameCode: string /** The gameCode for the current Game */;
 }
 
 import "../styles.css";
 
+/**
+ * The Game component
+ * Renders the Game with all the Board and Game Information like scores, current turn
+ * @param {RouteComponentProps<RouteParams>} props The props passed by the `Home` component
+ * @returns {React.ReactElement} React component
+ */
+
 const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
   const { gameCode } = props.match.params;
+  /**
+   * State representing the piece which will play the current turn
+   */
   const [currentTurn, setCurrentTurn] = React.useState("white");
+  /**
+   * State representing the points scored by the player with white pieces
+   */
   const [whitePoints, setWhitePoints] = React.useState(0);
+  /**
+   * State representing the points scored by the player with black pieces
+   */
   const [blackPoints, setBlackPoints] = React.useState(0);
 
-  const toSentenceCase = (input: string) => {
-    return input.charAt(0).toUpperCase() + input.slice(1);
-  };
-
+  /**
+   * Returns the Game Component
+   * @returns {React.ReactElement} The Game component
+   */
   return (
     <div className="game">
+      {/* The Board */}
       <div className="board-panel">
         <Board
           currentTurn={currentTurn}
@@ -31,6 +48,7 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
           setBlackPoints={setBlackPoints}
         />
       </div>
+      {/* Game information such as scores, moves etc. */}
       <div className="score-panel">
         <Alert variant="success" style={{ userSelect: "none" }}>
           <Alert.Heading>Welcome to the game </Alert.Heading>

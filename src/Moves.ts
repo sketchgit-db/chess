@@ -1,17 +1,45 @@
 import { PieceProps } from "./Piece";
 
+/**
+ * Class computing the valid movements for all chess pieces at a given board configuration
+ * @property {any} _cellStatus The state representing the board at the given instance
+ * @property {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+ */
+
 class Moves {
   public cellStatus: any;
   public pieceStatus: Array<PieceProps>;
+
+  /**
+   * @constructor
+   * @param {any} _cellStatus The state representing the board at the given instance
+   * @param {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+   */
 
   constructor(_cellStatus: any, _pieceStatus: Array<PieceProps>) {
     this.cellStatus = _cellStatus;
     this.pieceStatus = _pieceStatus;
   }
 
+  /**
+   * Get the color of a given `piece`
+   * @param {PieceProps} piece
+   * @returns {string} The color of the piece, 'white' (or) 'black'
+   */
+
   private getPieceColor(piece: PieceProps) {
     return piece.type.split("-")[0];
   }
+
+  /**
+   * Checks if a cell with the given coordinates exists on the board
+   * If yes, checks if it is reachable by the piece
+   * @param {number} x The x coordinate of the cell
+   * @param {number} y The y coordinate of the cell
+   * @param {string} color The color of the piece attempting to move into this cell
+   * @returns {[boolean, boolean]} [possiblity of current move, possibility of next move \
+   *                                 (in case the current cell has a piece)]
+   */
 
   private checkCoordinateValidity(x: number, y: number, color: string) {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
@@ -31,6 +59,17 @@ class Moves {
     }
   }
 
+  /**
+   * Special function for Pawn, which moves forward only if empty cell exists
+   * Checks if a cell with the given coordinates exists on the board
+   * If yes, checks if it is reachable by the Pawn
+   * @param {number} x The x coordinate of the cell
+   * @param {number} y The y coordinate of the cell
+   * @param {string} color The color of the Pawn attempting to move into this cell
+   * @returns {[boolean, boolean]} [possiblity of current move, possibility of next move \
+   *                                 (in case the current cell has a piece)]
+   */
+
   private checkPawnMoveValidity(x: number, y: number, color: string) {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
@@ -45,6 +84,17 @@ class Moves {
       return [false, true];
     }
   }
+
+  /**
+   * Special function for Pawn, which attacks diagonally
+   * Checks if a cell with the given coordinates exists on the board
+   * If yes, checks if it is reachable by the Pawn
+   * @param {number} x The x coordinate of the cell
+   * @param {number} y The y coordinate of the cell
+   * @param {string} color The color of the Pawn attempting to move into this cell
+   * @returns {[boolean, boolean]} [possiblity of current move, possibility of next move \
+   *                                 (in case the current cell has a piece)]
+   */
 
   private checkPawnCaptureValidity(x: number, y: number, color: string) {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
@@ -64,13 +114,32 @@ class Moves {
     }
   }
 
+  /**
+   * Get the x and y coordinates of the cell represented by `index`
+   * @param {number} index The position of the cell (measured from board position a1)
+   * @returns {[number, number]} [x, y], The x and y coordinates for `index`
+   */
+
   private getCoordinates(index: number) {
     return [Math.floor(index / 8), index % 8];
   }
 
+  /**
+   * Get the index of a cell represented by the coordinates [x, y]
+   * @param {number} x The x coordinate of the cell
+   * @param {number} y The y coordinate of the cell
+   * @returns {number} The index [0, 64) of the cell measured from board position a1
+   */
+
   private getIndex(x: number, y: number) {
     return x * 8 + y;
   }
+
+  /**
+   * Get all valid moves and captures for the given Pawn `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given Pawn
+   */
 
   public getPawnMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
@@ -121,6 +190,12 @@ class Moves {
     }
     return moves;
   }
+
+  /**
+   * Get all valid moves and captures for the given Rook `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given Rook
+   */
 
   public getRookMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
@@ -173,6 +248,12 @@ class Moves {
     return moves;
   }
 
+  /**
+   * Get all valid moves and captures for the given Knight `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given Knight
+   */
+
   public getKnightMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
@@ -193,6 +274,12 @@ class Moves {
     }
     return moves;
   }
+
+  /**
+   * Get all valid moves and captures for the given Bishop `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given Bishop
+   */
 
   public getBishopMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);
@@ -261,12 +348,24 @@ class Moves {
     return moves;
   }
 
+  /**
+   * Get all valid moves and captures for the given Queen `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given Queen
+   */
+
   public getQueenMoves(piece: PieceProps) {
     let moves = new Array<PieceProps>();
     moves = [...moves, ...this.getBishopMoves(piece)];
     moves = [...moves, ...this.getRookMoves(piece)];
     return moves;
   }
+
+  /**
+   * Get all valid moves and captures for the given King `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<PieceProps>} Valid moves for given King
+   */
 
   public getKingMoves(piece: PieceProps) {
     const color = this.getPieceColor(piece);

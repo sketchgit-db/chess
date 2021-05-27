@@ -3,17 +3,38 @@ import { PieceProps } from "../Piece";
 import "../styles.css";
 
 export interface SquareProps {
-  color: string;
-  position: number;
-  piece: PieceProps;
-  onClick: (piece: PieceProps) => any;
+  color: string /** The color of the square cell */;
+  position: number /** The index [0, 64) of the square cell measured from a1 on the board */;
+  piece: PieceProps /** The piece (if any) on the square cell */;
+  onClick: (
+    piece: PieceProps
+  ) => any /** The onClick handler for the piece on the square cell */;
 }
 
+/**
+ * The Square component
+ * Returns the React Component for a given square cell on the board
+ * @param {BoardProps} props The props passed by the `Board` component
+ * @returns {React.ReactElement} React component
+ */
+
 const Square: React.FC<SquareProps> = (props) => {
+  /**
+   * Color of the cell 'white' or 'black'
+   */
   const className: string = props.color;
+  /**
+   * The position of the cell
+   */
   const position: number = props.position;
+  /**
+   * The piece on the cell
+   */
   const piece: PieceProps = props.piece;
 
+  /**
+   * Shows the possible moves for the current square cell's piece
+   */
   const showMoves = () => {
     props.onClick(piece);
     if (piece.pieceName !== null) {
@@ -25,6 +46,10 @@ const Square: React.FC<SquareProps> = (props) => {
     }
   };
 
+  /**
+   * Returns the Square component
+   * @returns {React.ReactElement} The Square component
+   */
   return (
     <div className={className}>
       <button className={piece.type} onClick={showMoves}>
