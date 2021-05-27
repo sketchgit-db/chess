@@ -9,18 +9,51 @@
 
 .game {
   padding: 10px 20px;
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
 }
 
-.panel {
-  float: left;
+.board-panel {
   width: 50%;
   padding-top: 2vmin;
   text-align: center;
 }
 
+.score-panel {
+  width: 50%;
+  padding-top: 2vmin;
+  text-align: center;
+}
+
+.score {
+  width: 100%;
+  margin-top: 10vmin;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  user-select: none;
+}
+
+.score-section {
+  width: 100%;
+  margin: 2vmin;
+}
+
 @media screen and (max-width: 100vmin) {
-  .panel {
+  .game {
+    flex-direction: column;
+  }
+  .board-panel {
     width: 100%;
+    padding-top: 2vmin;
+    text-align: center;
+  }
+
+  .score-panel {
+    width: 100%;
+    padding-top: 2vmin;
+    text-align: center;
   }
 }
 
@@ -121,6 +154,18 @@
   background-color: rgb(200, 255, 47);
   user-select: none;
   border: 1px solid rgb(80, 177, 1);
+}
+
+.check {
+  width: 10vmin;
+  height: 10vmin;
+  float: left;
+  font-size: 8vmin;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgb(240, 53, 53);
+  user-select: none;
 }
 
 .white-piece {

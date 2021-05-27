@@ -6,7 +6,7 @@ export interface SquareProps {
   color: string;
   position: number;
   piece: PieceProps;
-  onClick: ((piece: PieceProps) => any);
+  onClick: (piece: PieceProps) => any;
 }
 
 const Square: React.FC<SquareProps> = (props) => {

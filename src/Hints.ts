@@ -2,7 +2,6 @@ import { PieceProps } from "./Piece";
 import Moves from "./Moves";
 
 class Hints extends Moves {
-
   constructor(_cellStatus: any, _pieceStatus: Array<PieceProps>) {
     super(_cellStatus, _pieceStatus);
   }
@@ -32,7 +31,7 @@ class Hints extends Moves {
         break;
     }
     console.log(validMoves);
-    validMoves.forEach(_piece => {
+    validMoves.forEach((_piece) => {
       const _index = _piece.position;
       this.cellStatus[_index].setColor("selected");
     });
@@ -41,7 +40,7 @@ class Hints extends Moves {
 
   public showHints = (piece: PieceProps) => {
     if (piece.pieceName !== null) {
-      return this.showValidMoves(piece); 
+      return this.showValidMoves(piece);
     } else {
       return new Array<PieceProps>();
     }

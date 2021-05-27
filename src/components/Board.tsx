@@ -12,10 +12,27 @@ export interface BoardStatusProps {
   setColor: any;
 }
 
-const Board: React.FC = () => {
+export interface BoardProps {
+  currentTurn: string;
+  setCurrentTurn: any;
+  whitePoints: number;
+  setWhitePoints: any;
+  blackPoints: number;
+  setBlackPoints: any;
+}
+
+const Board: React.FC<BoardProps> = (props) => {
   const PieceConfig: Array<PieceProps> = [];
   const squares: any = [];
-  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1);
+  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0);
+  const {
+    currentTurn,
+    setCurrentTurn,
+    whitePoints,
+    setWhitePoints,
+    blackPoints,
+    setBlackPoints,
+  } = props;
 
   const updateBoardConfig = (index: number, _piece: PieceProps) => {
     if (Math.floor(index / 8 + index) % 2) {
@@ -37,10 +54,9 @@ const Board: React.FC = () => {
         setColor: setColor,
       };
     }
-  }
+  };
 
   const initBoardColors = () => {
-
     let BoardConfig: Array<BoardStatusProps> = [];
     const white_row = [
       PieceDetails.WHITE_ROOK,
@@ -68,7 +84,8 @@ const Board: React.FC = () => {
         "white-piece",
         white_row[index].pieceName,
         white_row[index].label,
-        index
+        index,
+        white_row[index].value
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
       PieceConfig.push(BoardConfig[index].piece);
@@ -78,13 +95,14 @@ const Board: React.FC = () => {
         "white-piece",
         PieceDetails.WHITE_PAWN.pieceName,
         PieceDetails.WHITE_PAWN.label,
-        index
+        index,
+        PieceDetails.WHITE_PAWN.value
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
       PieceConfig.push(BoardConfig[index].piece);
     }
     for (let index = 16; index < 48; index++) {
-      const _piece = new Piece("empty-cell", null, "", index);
+      const _piece = new Piece("empty-cell", null, "", index, 0);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
       PieceConfig.push(BoardConfig[index].piece);
     }
@@ -93,7 +111,8 @@ const Board: React.FC = () => {
         "black-piece",
         PieceDetails.BLACK_PAWN.pieceName,
         PieceDetails.BLACK_PAWN.label,
-        index
+        index,
+        PieceDetails.BLACK_PAWN.value
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
       PieceConfig.push(BoardConfig[index].piece);
@@ -103,7 +122,8 @@ const Board: React.FC = () => {
         "black-piece",
         black_row[index % 8].pieceName,
         black_row[index % 8].label,
-        index
+        index,
+        black_row[index % 8].value
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
       PieceConfig.push(BoardConfig[index].piece);
@@ -116,20 +136,34 @@ const Board: React.FC = () => {
   const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
   const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
 
+  const updateScores = (from: PieceProps, to: PieceProps) => {
+    if (from.pieceName?.split("-")[0] === "white") {
+      setWhitePoints(whitePoints + to.value);
+    } else {
+      setBlackPoints(blackPoints + to.value);
+    }
+  };
+
   const capture = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
-    console.log(posFrom, posTo);
-    dummyPiece.position = posFrom;
-    from.position = posTo;
-    to.position = posFrom;
-    BoardConfig[posFrom].setPiece(dummyPiece);
-    BoardConfig[posTo].setPiece(from);
+    if (to.pieceName?.split("-")[1] === "king") {
+      const posTo = to.position;
+      BoardConfig[posTo].setColor("check");
+    } else {
+      const posFrom = from.position,
+        posTo = to.position;
+      dummyPiece.position = posFrom;
+      from.position = posTo;
+      to.position = posFrom;
+      BoardConfig[posFrom].setPiece(dummyPiece);
+      BoardConfig[posTo].setPiece(from);
+      updateScores(from, to);
+    }
   };
 
   const makeMove = (from: PieceProps, to: PieceProps) => {
-
     if (to.pieceName === null) {
-      const posFrom = from.position, posTo = to.position;
+      const posFrom = from.position,
+        posTo = to.position;
       console.log(posFrom, posTo);
       to.position = posFrom;
       from.position = posTo;
@@ -142,21 +176,26 @@ const Board: React.FC = () => {
 
   const checkPossibleMove = (piece: PieceProps) => {
     const index = piece.position;
-    return (BoardConfig[index].color === "selected");
-  }
+    return (
+      piece.position !== clickedPiece.position &&
+      BoardConfig[index].color === "selected"
+    );
+  };
 
   const squareOnClickHandler = (piece: PieceProps) => {
-    console.log(piece);
     const moves = new Hints(BoardConfig, PieceConfig);
     if (checkPossibleMove(piece)) {
       makeMove(clickedPiece, piece);
+      moves.hideHints(hintCells);
+      setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
-      moves.hideHints(hintCells);
     } else {
-      updateClickedPiece(piece);
-      moves.hideHints(hintCells);
-      const validMoves = moves.showHints(piece);
-      updateHintCells(validMoves);  
+      if (piece.pieceName?.split("-")[0] === currentTurn) {
+        updateClickedPiece(piece);
+        moves.hideHints(hintCells);
+        const validMoves = moves.showHints(piece);
+        updateHintCells(validMoves);
+      }
     }
   };
 
