@@ -1,24 +1,21 @@
 import { PieceProps } from "./Piece";
+import { BoardStatusProps } from "./components/Board";
 
 /**
  * Class computing the valid movements for all chess pieces at a given board configuration
- * @property {any} _cellStatus The state representing the board at the given instance
- * @property {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+ * @property {Array<BoardStatusProps>} _cellStatus The state representing the board at the given instance
  */
 
 class Moves {
-  public cellStatus: any;
-  public pieceStatus: Array<PieceProps>;
+  public cellStatus: Array<BoardStatusProps>;
 
   /**
    * @constructor
-   * @param {any} _cellStatus The state representing the board at the given instance
-   * @param {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+   * @param {Array<BoardStatusProps>} _cellStatus The state representing the board at the given instance
    */
 
-  constructor(_cellStatus: any, _pieceStatus: Array<PieceProps>) {
+  constructor(_cellStatus: Array<BoardStatusProps>) {
     this.cellStatus = _cellStatus;
-    this.pieceStatus = _pieceStatus;
   }
 
   /**
@@ -27,7 +24,7 @@ class Moves {
    * @returns {string} The color of the piece, 'white' (or) 'black'
    */
 
-  private getPieceColor(piece: PieceProps) {
+  protected getPieceColor(piece: PieceProps) {
     return piece.type.split("-")[0];
   }
 
@@ -44,10 +41,10 @@ class Moves {
   private checkCoordinateValidity(x: number, y: number, color: string) {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
-      if (this.pieceStatus[index].pieceName === null) {
+      if (this.cellStatus[index].piece.pieceName === null) {
         // empty cell
         return [true, true];
-      } else if (this.getPieceColor(this.pieceStatus[index]) !== color) {
+      } else if (this.getPieceColor(this.cellStatus[index].piece) !== color) {
         // opponent piece
         return [true, false];
       } else {
@@ -73,7 +70,7 @@ class Moves {
   private checkPawnMoveValidity(x: number, y: number, color: string) {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
-      if (this.pieceStatus[index].pieceName === null) {
+      if (this.cellStatus[index].piece.pieceName === null) {
         // empty cell
         return [true, true];
       } else {
@@ -100,8 +97,8 @@ class Moves {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
       if (
-        this.pieceStatus[index].pieceName !== null &&
-        this.getPieceColor(this.pieceStatus[index]) !== color
+        this.cellStatus[index].piece.pieceName !== null &&
+        this.getPieceColor(this.cellStatus[index].piece) !== color
       ) {
         // opponent cell
         return [true, true];
@@ -116,7 +113,7 @@ class Moves {
 
   /**
    * Get the x and y coordinates of the cell represented by `index`
-   * @param {number} index The position of the cell (measured from board position a1)
+   * @param {number} index The position of the cell (measured from board position a8)
    * @returns {[number, number]} [x, y], The x and y coordinates for `index`
    */
 
@@ -128,7 +125,7 @@ class Moves {
    * Get the index of a cell represented by the coordinates [x, y]
    * @param {number} x The x coordinate of the cell
    * @param {number} y The y coordinate of the cell
-   * @returns {number} The index [0, 64) of the cell measured from board position a1
+   * @returns {number} The index [0, 64) of the cell measured from board position a8
    */
 
   private getIndex(x: number, y: number) {
@@ -147,45 +144,45 @@ class Moves {
     let moves = new Array<PieceProps>(piece);
     if (color === "white") {
       // Pawn free movement
-      let [currMove, nextMove] = this.checkPawnMoveValidity(x + 1, y, color);
-      if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + 1, y)]);
-      }
-      if (nextMove === true) {
-        let [currMove, nextMove] = this.checkPawnMoveValidity(x + 2, y, color);
-        if (x == 1 && currMove) {
-          moves.push(this.pieceStatus[this.getIndex(x + 2, y)]);
-        }
-      }
-      // Pawn capture
-      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
-      if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + 1, y + 1)]);
-      }
-      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y - 1, color);
-      if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + 1, y - 1)]);
-      }
-    } else {
-      // Pawn free movement
       let [currMove, nextMove] = this.checkPawnMoveValidity(x - 1, y, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x - 1, y)]);
+        moves.push(this.cellStatus[this.getIndex(x - 1, y)].piece);
       }
       if (nextMove === true) {
         let [currMove, nextMove] = this.checkPawnMoveValidity(x - 2, y, color);
         if (x == 6 && currMove) {
-          moves.push(this.pieceStatus[this.getIndex(x - 2, y)]);
+          moves.push(this.cellStatus[this.getIndex(x - 2, y)].piece);
         }
       }
       // Pawn capture
       [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y + 1, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x - 1, y + 1)]);
+        moves.push(this.cellStatus[this.getIndex(x - 1, y + 1)].piece);
       }
       [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y - 1, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x - 1, y - 1)]);
+        moves.push(this.cellStatus[this.getIndex(x - 1, y - 1)].piece);
+      }
+    } else {
+      // Pawn free movement
+      let [currMove, nextMove] = this.checkPawnMoveValidity(x + 1, y, color);
+      if (currMove) {
+        moves.push(this.cellStatus[this.getIndex(x + 1, y)].piece);
+      }
+      if (nextMove === true) {
+        let [currMove, nextMove] = this.checkPawnMoveValidity(x + 2, y, color);
+        if (x == 1 && currMove) {
+          moves.push(this.cellStatus[this.getIndex(x + 2, y)].piece);
+        }
+      }
+      // Pawn capture
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
+      if (currMove) {
+        moves.push(this.cellStatus[this.getIndex(x + 1, y + 1)].piece);
+      }
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y - 1, color);
+      if (currMove) {
+        moves.push(this.cellStatus[this.getIndex(x + 1, y - 1)].piece);
       }
     }
     return moves;
@@ -204,7 +201,7 @@ class Moves {
     for (let dx = 1; dx < 8 - x; dx++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + dx, y)]);
+        moves.push(this.cellStatus[this.getIndex(x + dx, y)].piece);
         if (nextMove === false) {
           break;
         }
@@ -215,7 +212,7 @@ class Moves {
     for (let dx = -1; dx >= -x; dx--) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + dx, y)]);
+        moves.push(this.cellStatus[this.getIndex(x + dx, y)].piece);
         if (nextMove === false) {
           break;
         }
@@ -226,7 +223,7 @@ class Moves {
     for (let dy = 1; dy < 8 - y; dy++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x, y + dy, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x, y + dy)]);
+        moves.push(this.cellStatus[this.getIndex(x, y + dy)].piece);
         if (nextMove === false) {
           break;
         }
@@ -237,7 +234,7 @@ class Moves {
     for (let dy = -1; dy >= -y; dy--) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x, y + dy, color);
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x, y + dy)]);
+        moves.push(this.cellStatus[this.getIndex(x, y + dy)].piece);
         if (nextMove === false) {
           break;
         }
@@ -268,7 +265,7 @@ class Moves {
       );
       if (currMove) {
         moves.push(
-          this.pieceStatus[this.getIndex(x + dx[index], y + dy[index])]
+          this.cellStatus[this.getIndex(x + dx[index], y + dy[index])].piece
         );
       }
     }
@@ -292,7 +289,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + index, y + index)]);
+        moves.push(this.cellStatus[this.getIndex(x + index, y + index)].piece);
         if (nextMove === false) {
           break;
         }
@@ -307,7 +304,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x + index, y + index)]);
+        moves.push(this.cellStatus[this.getIndex(x + index, y + index)].piece);
         if (nextMove === false) {
           break;
         }
@@ -322,7 +319,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x - index, y + index)]);
+        moves.push(this.cellStatus[this.getIndex(x - index, y + index)].piece);
         if (nextMove === false) {
           break;
         }
@@ -337,7 +334,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.pieceStatus[this.getIndex(x - index, y + index)]);
+        moves.push(this.cellStatus[this.getIndex(x - index, y + index)].piece);
         if (nextMove === false) {
           break;
         }
@@ -381,7 +378,7 @@ class Moves {
       );
       if (currMove) {
         moves.push(
-          this.pieceStatus[this.getIndex(x + dx[index], y + dy[index])]
+          this.cellStatus[this.getIndex(x + dx[index], y + dy[index])].piece
         );
       }
     }

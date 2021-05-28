@@ -1,4 +1,6 @@
 import React from "react";
+import { useHistory } from "react-router-dom";
+import { Button, Modal } from "react-bootstrap";
 import Square from "./Square";
 import PieceDetails from "../PieceDetails";
 import Piece, { PieceProps } from "../Piece";
@@ -29,14 +31,21 @@ export interface BoardProps {
  */
 
 const Board: React.FC<BoardProps> = (props) => {
-  /**
-   * Stores configuration of all pieces on the board
-   */
-  const PieceConfig: Array<PieceProps> = [];
+  const history = useHistory();
   /**
    * A dummy Piece representing an empty cell for capture moves
    */
-  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0);
+  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "");
+
+  /**
+   * State storing whether the game is in progress or has completed
+   */
+  const [gameComplete, setGameComplete] = React.useState(false);
+
+  /**
+   * State storing the color of the winning side
+   */
+  const [winningColor, setWinningColor] = React.useState("");
 
   /**
    * Destructuring props into member variables
@@ -82,7 +91,7 @@ const Board: React.FC<BoardProps> = (props) => {
   /**
    * Initializes the Board state in `BoardConfig`
    * The board is initialized according to the following FEN rule
-   * RNBQKBNR/PPPPPPPP/8/8/8/8/pppppppp/rnbqkbnr w
+   * rnbqkbnr/pppppppp/8/8/8/8/RNBQKBNR/PPPPPPPP w
    * @returns {Array<BoardStatusProps>} The BoardConfig
    */
 
@@ -109,59 +118,62 @@ const Board: React.FC<BoardProps> = (props) => {
       PieceDetails.BLACK_ROOK,
     ];
 
-    // RNBQKBNR
+    // rnbqkbnr
     for (let index = 0; index < 8; index++) {
       const _piece = new Piece(
-        "white-piece",
-        white_row[index].pieceName,
-        white_row[index].label,
+        "black-piece",
+        black_row[index].pieceName,
+        black_row[index].label,
         index,
-        white_row[index].value
+        black_row[index].value,
+        black_row[index].identifier
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
-      PieceConfig.push(BoardConfig[index].piece);
     }
-    // PPPPPPPP
-    for (let index = 8; index < 16; index++) {
-      const _piece = new Piece(
-        "white-piece",
-        PieceDetails.WHITE_PAWN.pieceName,
-        PieceDetails.WHITE_PAWN.label,
-        index,
-        PieceDetails.WHITE_PAWN.value
-      );
-      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
-      PieceConfig.push(BoardConfig[index].piece);
-    }
-    // 8/8/8/8
-    for (let index = 16; index < 48; index++) {
-      const _piece = new Piece("empty-cell", null, "", index, 0);
-      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
-      PieceConfig.push(BoardConfig[index].piece);
-    }
+
     // pppppppp
-    for (let index = 48; index < 56; index++) {
+    for (let index = 8; index < 16; index++) {
       const _piece = new Piece(
         "black-piece",
         PieceDetails.BLACK_PAWN.pieceName,
         PieceDetails.BLACK_PAWN.label,
         index,
-        PieceDetails.BLACK_PAWN.value
+        PieceDetails.BLACK_PAWN.value,
+        PieceDetails.BLACK_PAWN.identifier
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
-      PieceConfig.push(BoardConfig[index].piece);
     }
-    // rnbqkbnr
+
+    // 8/8/8/8
+    for (let index = 16; index < 48; index++) {
+      const _piece = new Piece("empty-cell", null, "", index, 0, "");
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+    }
+
+    // PPPPPPPP
+    for (let index = 48; index < 56; index++) {
+      const _piece = new Piece(
+        "white-piece",
+        PieceDetails.WHITE_PAWN.pieceName,
+        PieceDetails.WHITE_PAWN.label,
+        index,
+        PieceDetails.WHITE_PAWN.value,
+        PieceDetails.WHITE_PAWN.identifier
+      );
+      BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
+    }
+
+    // RNBQKBNR
     for (let index = 56; index < 64; index++) {
       const _piece = new Piece(
-        "black-piece",
-        black_row[index % 8].pieceName,
-        black_row[index % 8].label,
+        "white-piece",
+        white_row[index % 8].pieceName,
+        white_row[index % 8].label,
         index,
-        black_row[index % 8].value
+        white_row[index % 8].value,
+        white_row[index % 8].identifier
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
-      PieceConfig.push(BoardConfig[index].piece);
     }
 
     return BoardConfig;
@@ -207,6 +219,7 @@ const Board: React.FC<BoardProps> = (props) => {
     } else {
       const posFrom = from.position,
         posTo = to.position;
+      console.log(`Making a capture from ${posFrom} to ${posTo}`);
       dummyPiece.position = posFrom;
       from.position = posTo;
       to.position = posFrom;
@@ -225,7 +238,7 @@ const Board: React.FC<BoardProps> = (props) => {
     if (to.pieceName === null) {
       const posFrom = from.position,
         posTo = to.position;
-      console.log(posFrom, posTo);
+      console.log(`Making a move from ${posFrom} to ${posTo}`);
       to.position = posFrom;
       from.position = posTo;
       BoardConfig[posFrom].setPiece(to);
@@ -250,16 +263,44 @@ const Board: React.FC<BoardProps> = (props) => {
   };
 
   /**
+   * TODO
+   * Checks if the opponent king to the attacking `piece` is in checkMate
+   * @param {PieceProps} piece 
+   */
+
+  const isCheckMate = (piece: PieceProps) => {
+    if (true) {
+      setGameComplete(true);
+      // @ts-ignore
+      setWinningColor(piece.pieceName?.split("-")[0]);  
+    }
+  }
+
+  /**
+   * Checks if the attacking `piece` causes a check to the opponent king
+   * @param {PieceProps} piece 
+   */
+
+  const isCheck = (piece: PieceProps) => {
+    const moves = new Hints(BoardConfig);
+    const position = moves.isCheck(piece);
+    if (position !== -1) {
+      BoardConfig[position].setColor("check");
+    }
+  };
+
+  /**
    * onClick Handler for a given piece click
    * Checks if a move is possible and performs if a source and destination cell exists
    * @param {PieceProps} piece The piece (or an empty cell) clicked upon
    */
 
   const squareOnClickHandler = (piece: PieceProps) => {
-    const moves = new Hints(BoardConfig, PieceConfig);
+    const moves = new Hints(BoardConfig);
     if (checkPossibleMove(piece)) {
       makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
+      isCheck(clickedPiece);
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
     } else {
@@ -299,7 +340,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const getRanks = () => {
     const ranks = [];
-    for (let index = 1; index <= 8; index++) {
+    for (let index = 8; index >= 1; index--) {
       ranks.push(<div className="ranks">{index}</div>);
     }
     return ranks;
@@ -332,6 +373,17 @@ const Board: React.FC<BoardProps> = (props) => {
         <div className="rank-list">{getRanks()}</div>
       </div>
       <div className="file-list">{getFiles()}</div>
+      <Modal show={gameComplete}>
+          <Modal.Header>
+            <Modal.Title>Game Over !</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>{`${winningColor} Won by checkMate`}</Modal.Body>
+          <Modal.Footer>
+            <Button variant="primary" onClick={() => {history.push('/')}}>
+              Continue
+            </Button>
+          </Modal.Footer>
+      </Modal>
     </div>
   );
 };

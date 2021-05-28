@@ -1,22 +1,21 @@
 import { PieceProps } from "./Piece";
+import { BoardStatusProps } from "./components/Board";
 import Moves from "./Moves";
 
 /**
  * Class representing the valid movements on UI for a given piece at a given board configuration
  * Extends the base class `Moves`
- * @property {any} _cellStatus The state representing the board at the given instance
- * @property {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+ * @property {Array<BoardStatusProps>} _cellStatus The state representing the board at the given instance
  */
 
 class Hints extends Moves {
   /**
    * @constructor
-   * @param {any} _cellStatus The state representing the board at the given instance
-   * @param {Array<PieceProps>} _pieceStatus The state representing the Pieces at the given instance
+   * @param {Array<BoardStatusProps>} _cellStatus The state representing the board at the given instance
    */
 
-  constructor(_cellStatus: any, _pieceStatus: Array<PieceProps>) {
-    super(_cellStatus, _pieceStatus);
+  constructor(_cellStatus: Array<BoardStatusProps>) {
+    super(_cellStatus);
   }
 
   /**
@@ -49,11 +48,6 @@ class Hints extends Moves {
         validMoves = this.getKingMoves(piece);
         break;
     }
-    console.log(validMoves);
-    validMoves.forEach((_piece) => {
-      const _index = _piece.position;
-      this.cellStatus[_index].setColor("selected");
-    });
     return validMoves;
   };
 
@@ -66,7 +60,12 @@ class Hints extends Moves {
 
   public showHints = (piece: PieceProps) => {
     if (piece.pieceName !== null) {
-      return this.showValidMoves(piece);
+      const validMoves = this.showValidMoves(piece);
+      validMoves.forEach((_piece) => {
+        const _index = _piece.position;
+        this.cellStatus[_index].setColor("selected");
+      });
+      return validMoves;
     } else {
       return new Array<PieceProps>();
     }
@@ -85,6 +84,27 @@ class Hints extends Moves {
       );
     });
   };
+
+  public isCheck(from: PieceProps) {
+    const attackerColor = this.getPieceColor(from);
+    const targetPiece =
+      (attackerColor === "white" ? "black" : "white") + "-king";
+    for (let index = 0; index < 64; index++) {
+      if (this.cellStatus[index].piece.pieceName === null) {
+        continue;
+      } else if (
+        this.getPieceColor(this.cellStatus[index].piece) === attackerColor
+      ) {
+        const moves = this.showValidMoves(this.cellStatus[index].piece);
+        for (let pos = 0; pos < moves.length; pos++) {
+          if (moves[pos].pieceName === targetPiece) {
+            return moves[pos].position;
+          }
+        }
+      }
+    }
+    return -1;
+  }
 }
 
 /**
