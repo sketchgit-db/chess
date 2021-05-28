@@ -21,6 +21,8 @@ export interface BoardProps {
   setWhitePoints: any /** The callback to update the above `whitePoints` */;
   blackPoints: number /** State representing the points scored by the player with black pieces */;
   setBlackPoints: any /** The callback to update the above `blackPoints` */;
+  gameMoves: Array<string> /** State representing the moves in the game so far */;
+  setGameMoves: any /** The callback to update the moves in the game */;
 }
 
 /**
@@ -57,6 +59,8 @@ const Board: React.FC<BoardProps> = (props) => {
     setWhitePoints,
     blackPoints,
     setBlackPoints,
+    gameMoves,
+    setGameMoves,
   } = props;
 
   /**
@@ -206,6 +210,87 @@ const Board: React.FC<BoardProps> = (props) => {
   };
 
   /**
+   *
+   * @param {PieceProps} from The source piece
+   * @param {PieceProps} to The destination piece (or empty cell)
+   * @param {boolean} isCapture Whether a capture of piece took place
+   * @param {boolean} isCheck Whether the opponent king was given a check
+   * @param {boolean} isCheckMate Whether the opponent king was checkmate
+   * @returns {string} The algebraic notation of the move
+   */
+
+  const getMoveRepresentation = (
+    from: PieceProps,
+    to: PieceProps,
+    isCapture: boolean,
+    isCheck: boolean,
+    isCheckMate: boolean
+  ) => {
+    const posTo = from.position;
+    const [x, y] = [
+      (8 - Math.floor(posTo / 8)).toString(),
+      String.fromCharCode(97 + (posTo % 8)),
+    ];
+    let moveRep = from.identifier + (isCapture ? "x" : "") + y + x;
+    if (isCheckMate) {
+      moveRep += "#";
+    } else if (isCheck) {
+      moveRep += "+";
+    }
+    setGameMoves([...gameMoves, moveRep]);
+  };
+
+  /**
+   * TODO
+   * Checks if the opponent king to the attacking `piece` is in checkMate
+   * @param {PieceProps} piece The latest piece which caused check
+   * @param {number} kingPos The position of the opponent king
+   * @returns {boolean} true if the opponent king has been checkmated, false otherwise
+   */
+
+  const isCheckMate = (
+    piece: PieceProps,
+    kingPos: number,
+    possibleMoves: Array<PieceProps>
+  ): boolean => {
+    const moves = new Hints(BoardConfig);
+    const validMoves = moves.getKingMoves(BoardConfig[kingPos].piece);
+    const checkMate = validMoves.every((val) => possibleMoves.includes(val));
+    if (checkMate) {
+      setGameComplete(true);
+      // @ts-ignore
+      setWinningColor(piece.pieceName?.split("-")[0]);
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  /**
+   * Checks if the attacking `piece` causes a check to the opponent king
+   * @param {PieceProps} piece The attacking piece
+   * @returns {[boolean, boolean]} [isCheck, isCheckMate] for the opponent king
+   */
+
+  const isCheck = (piece: PieceProps): [boolean, boolean] => {
+    const moves = new Hints(BoardConfig);
+    const [found, selfKingPos, oppKingPos, possibleMoves] = moves.isCheck(piece);
+    if (found) {
+      BoardConfig[oppKingPos].setColor("check");
+      const ischeckMate = isCheckMate(piece, oppKingPos, possibleMoves);
+      return [true, ischeckMate];
+    } else {
+      BoardConfig[selfKingPos].setColor(
+        Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white"
+      );
+      BoardConfig[oppKingPos].setColor(
+        Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white"
+      );
+      return [false, false];
+    }
+  };
+
+  /**
    * Performs the capture move
    * @param {PieceProps} from The capturing piece
    * @param {PieceProps} to The captured piece
@@ -233,8 +318,10 @@ const Board: React.FC<BoardProps> = (props) => {
    * Perform the move (simple move (or) capture)
    * @param {PieceProps} from The piece attempting to move
    * @param {PieceProps} to The cell to which the move attempt is made
+   * @returns {boolean} true if the move was a piece capture, false otherwise
    */
-  const makeMove = (from: PieceProps, to: PieceProps) => {
+
+  const makeMove = (from: PieceProps, to: PieceProps): boolean => {
     if (to.pieceName === null) {
       const posFrom = from.position,
         posTo = to.position;
@@ -243,8 +330,10 @@ const Board: React.FC<BoardProps> = (props) => {
       from.position = posTo;
       BoardConfig[posFrom].setPiece(to);
       BoardConfig[posTo].setPiece(from);
+      return false;
     } else {
       capture(from, to);
+      return true;
     }
   };
 
@@ -254,39 +343,13 @@ const Board: React.FC<BoardProps> = (props) => {
    * @param {PieceProps} piece
    * @returns {boolean} The possiblity of a move (true (or) false)
    */
-  const checkPossibleMove = (piece: PieceProps) => {
+
+  const checkPossibleMove = (piece: PieceProps): boolean => {
     const index = piece.position;
     return (
       piece.position !== clickedPiece.position &&
       BoardConfig[index].color === "selected"
     );
-  };
-
-  /**
-   * TODO
-   * Checks if the opponent king to the attacking `piece` is in checkMate
-   * @param {PieceProps} piece 
-   */
-
-  const isCheckMate = (piece: PieceProps) => {
-    if (true) {
-      setGameComplete(true);
-      // @ts-ignore
-      setWinningColor(piece.pieceName?.split("-")[0]);  
-    }
-  }
-
-  /**
-   * Checks if the attacking `piece` causes a check to the opponent king
-   * @param {PieceProps} piece 
-   */
-
-  const isCheck = (piece: PieceProps) => {
-    const moves = new Hints(BoardConfig);
-    const position = moves.isCheck(piece);
-    if (position !== -1) {
-      BoardConfig[position].setColor("check");
-    }
   };
 
   /**
@@ -298,9 +361,22 @@ const Board: React.FC<BoardProps> = (props) => {
   const squareOnClickHandler = (piece: PieceProps) => {
     const moves = new Hints(BoardConfig);
     if (checkPossibleMove(piece)) {
-      makeMove(clickedPiece, piece);
+      // make a move (or capture)
+      const fromPiece = clickedPiece,
+        toPiece = piece;
+      const isCapture = makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
-      isCheck(clickedPiece);
+      // check if the move caused a check to the opponent
+      const [ischeck, ischeckmate] = isCheck(clickedPiece);
+      // get the move representation
+      getMoveRepresentation(
+        fromPiece,
+        toPiece,
+        isCapture,
+        ischeck,
+        ischeckmate
+      );
+      // next turn
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
     } else {
@@ -374,15 +450,20 @@ const Board: React.FC<BoardProps> = (props) => {
       </div>
       <div className="file-list">{getFiles()}</div>
       <Modal show={gameComplete}>
-          <Modal.Header>
-            <Modal.Title>Game Over !</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>{`${winningColor} Won by checkMate`}</Modal.Body>
-          <Modal.Footer>
-            <Button variant="primary" onClick={() => {history.push('/')}}>
-              Continue
-            </Button>
-          </Modal.Footer>
+        <Modal.Header>
+          <Modal.Title>Game Over !</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{`${winningColor} Won by checkMate`}</Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="primary"
+            onClick={() => {
+              history.push("/");
+            }}
+          >
+            Continue
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

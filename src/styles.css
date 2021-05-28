@@ -26,6 +26,16 @@
   text-align: center;
 }
 
+.game-data {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2vmin;
+  background-color:#fabc4f;
+  border-radius: 20px;
+  border: 1px solid #a95517;
+}
+
 .score {
   width: 100%;
   margin-top: 10vmin;
@@ -38,6 +48,33 @@
 .score-section {
   width: 100%;
   margin: 2vmin;
+}
+
+.moves-panel-outline {
+  margin-top: 10vmin;
+  user-select: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.moves-panel {
+  width: 50%;
+  font-size: 2.5vmin;
+}
+
+.moves-list {
+  align-items: baseline;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: start;
+  background-color: rgb(90, 152, 245);
+  max-height: 25vmin;
+  overflow-y: auto;
+}
+
+.move {
+  text-align: left;
 }
 
 @media screen and (max-width: 100vmin) {
@@ -55,6 +92,11 @@
     padding-top: 2vmin;
     text-align: center;
   }
+
+  .moves-panel {
+    width: 100%;
+    font-size: 15px;
+  }  
 }
 
 .outline-1 {

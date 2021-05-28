@@ -24,7 +24,7 @@ class Hints extends Moves {
    * @returns {Array<PieceProps>} An array containing the valid Moves
    */
 
-  private showValidMoves = (piece: PieceProps) => {
+  private showValidMoves = (piece: PieceProps): Array<PieceProps> => {
     const index = piece.position;
     const pieceName = piece.pieceName?.split("-")[1];
     let validMoves: Array<PieceProps> = new Array<PieceProps>();
@@ -58,7 +58,7 @@ class Hints extends Moves {
    * @returns {Array<PieceProps>} An array containing the valid Moves
    */
 
-  public showHints = (piece: PieceProps) => {
+  public showHints = (piece: PieceProps): Array<PieceProps> => {
     if (piece.pieceName !== null) {
       const validMoves = this.showValidMoves(piece);
       validMoves.forEach((_piece) => {
@@ -85,25 +85,40 @@ class Hints extends Moves {
     });
   };
 
-  public isCheck(from: PieceProps) {
-    const attackerColor = this.getPieceColor(from);
+  /**
+   * Determine if the king opposite to `piece` is in check by any pieces of the color of `piece`
+   * @param {PieceProps} piece
+   * @returns {[boolean, number, number, Array<PieceProps>]} The position of the king in check (if any, else -1)
+   */
+
+  public isCheck(piece: PieceProps): [boolean, number, number, Array<PieceProps>] {
+    const attackerColor = this.getPieceColor(piece);
     const targetPiece =
       (attackerColor === "white" ? "black" : "white") + "-king";
+    let possibleMoves = new Array<PieceProps>();
+    let oppKingPos = -1, selfKingPos = -1, found = false;
     for (let index = 0; index < 64; index++) {
       if (this.cellStatus[index].piece.pieceName === null) {
         continue;
       } else if (
         this.getPieceColor(this.cellStatus[index].piece) === attackerColor
       ) {
+        if (this.cellStatus[index].piece.pieceName?.split("-")[1] === "king") {
+          selfKingPos = index;
+        }
         const moves = this.showValidMoves(this.cellStatus[index].piece);
+        possibleMoves = [...possibleMoves, ...moves];
         for (let pos = 0; pos < moves.length; pos++) {
           if (moves[pos].pieceName === targetPiece) {
-            return moves[pos].position;
+            oppKingPos = moves[pos].position;
+            found = true;
           }
         }
+      } else if (this.cellStatus[index].piece.pieceName === targetPiece) {
+        oppKingPos = index;
       }
     }
-    return -1;
+    return [found, selfKingPos, oppKingPos, possibleMoves];
   }
 }
 

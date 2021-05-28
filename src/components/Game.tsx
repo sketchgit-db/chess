@@ -32,6 +32,24 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
   const [blackPoints, setBlackPoints] = React.useState(0);
 
   /**
+   * State representing the moves in the game so far
+   */
+  const [moves, setMoves] = React.useState(Array<string>());
+
+  const getMoves = () => {
+    let gameMoves = [];
+    for (let index = 0; index < moves.length; index += 2) {
+      let move: string = "";
+      move += (1 + index / 2).toString() + ". ";
+      move += moves[index] + " ";
+      if (index + 1 < moves.length)
+        move += moves[index + 1] + "\n";
+      gameMoves.push(<Card.Text className="move">{move}</Card.Text>)
+    }
+    return gameMoves;
+  }
+
+  /**
    * Returns the Game Component
    * @returns {React.ReactElement} The Game component
    */
@@ -46,6 +64,8 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
           setWhitePoints={setWhitePoints}
           blackPoints={blackPoints}
           setBlackPoints={setBlackPoints}
+          gameMoves={moves}
+          setGameMoves={setMoves}
         />
       </div>
       {/* Game information such as scores, moves etc. */}
@@ -54,38 +74,45 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
           <Alert.Heading>Welcome to the game </Alert.Heading>
         </Alert>
 
-        <div className="score">
-          <Card
-            className="score-section"
-            border={currentTurn === "white" ? "none" : "dark"}
-          >
-            <Card.Body>
-              <Card.Title>Black</Card.Title>
-            </Card.Body>
-            <Card.Footer>
-              <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
-            </Card.Footer>
-          </Card>
-          <Card
-            className="score-section"
-            border={currentTurn === "white" ? "dark" : "none"}
-          >
-            <Card.Body>
-              <Card.Title>White</Card.Title>
-            </Card.Body>
-            <Card.Footer>
-              <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
-            </Card.Footer>
-          </Card>
+        <div className="game-data">
+          <div className="score">
+            <Card
+              className="score-section"
+              border={currentTurn === "white" ? "none" : "dark"}
+            >
+              <Card.Body>
+                <Card.Title>Black</Card.Title>
+              </Card.Body>
+              <Card.Footer>
+                <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
+              </Card.Footer>
+            </Card>
+            <Card
+              className="score-section"
+              border={currentTurn === "white" ? "dark" : "none"}
+            >
+              <Card.Body>
+                <Card.Title>White</Card.Title>
+              </Card.Body>
+              <Card.Footer>
+                <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
+              </Card.Footer>
+            </Card>
+          </div>
+          <div className="moves-panel-outline">
+            <Card className="moves-panel" border="dark">
+              <Card.Header>
+                <Card.Title>Moves</Card.Title>
+              </Card.Header>
+              <Card.Body className="moves-list">
+                <div>
+                  {getMoves()}
+                </div>
+              </Card.Body>
+              <Card.Footer></Card.Footer>
+            </Card>
+          </div>
         </div>
-
-        <Card className="score" border="dark">
-          <Card.Body>
-            <Card.Title>Moves</Card.Title>
-            <Card.Text></Card.Text>
-          </Card.Body>
-          <Card.Footer></Card.Footer>
-        </Card>
       </div>
     </div>
   );

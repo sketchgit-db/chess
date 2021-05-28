@@ -24,7 +24,7 @@ class Moves {
    * @returns {string} The color of the piece, 'white' (or) 'black'
    */
 
-  protected getPieceColor(piece: PieceProps) {
+  protected getPieceColor(piece: PieceProps): string {
     return piece.type.split("-")[0];
   }
 
@@ -38,7 +38,7 @@ class Moves {
    *                                 (in case the current cell has a piece)]
    */
 
-  private checkCoordinateValidity(x: number, y: number, color: string) {
+  private checkCoordinateValidity(x: number, y: number, color: string): [boolean, boolean] {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
       if (this.cellStatus[index].piece.pieceName === null) {
@@ -67,7 +67,7 @@ class Moves {
    *                                 (in case the current cell has a piece)]
    */
 
-  private checkPawnMoveValidity(x: number, y: number, color: string) {
+  private checkPawnMoveValidity(x: number, y: number, color: string): [boolean, boolean] {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
       if (this.cellStatus[index].piece.pieceName === null) {
@@ -93,7 +93,7 @@ class Moves {
    *                                 (in case the current cell has a piece)]
    */
 
-  private checkPawnCaptureValidity(x: number, y: number, color: string) {
+  private checkPawnCaptureValidity(x: number, y: number, color: string): [boolean, boolean] {
     if (x >= 0 && x < 8 && y >= 0 && y < 8) {
       const index = this.getIndex(x, y);
       if (
@@ -117,7 +117,7 @@ class Moves {
    * @returns {[number, number]} [x, y], The x and y coordinates for `index`
    */
 
-  private getCoordinates(index: number) {
+  private getCoordinates(index: number): [number, number] {
     return [Math.floor(index / 8), index % 8];
   }
 
@@ -128,7 +128,7 @@ class Moves {
    * @returns {number} The index [0, 64) of the cell measured from board position a8
    */
 
-  private getIndex(x: number, y: number) {
+  private getIndex(x: number, y: number): number {
     return x * 8 + y;
   }
 
@@ -138,7 +138,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given Pawn
    */
 
-  public getPawnMoves(piece: PieceProps) {
+  public getPawnMoves(piece: PieceProps): Array<PieceProps> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
     let moves = new Array<PieceProps>(piece);
@@ -194,7 +194,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given Rook
    */
 
-  public getRookMoves(piece: PieceProps) {
+  public getRookMoves(piece: PieceProps): Array<PieceProps> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
     let moves = new Array<PieceProps>(piece);
@@ -251,7 +251,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given Knight
    */
 
-  public getKnightMoves(piece: PieceProps) {
+  public getKnightMoves(piece: PieceProps): Array<PieceProps> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
     let moves = new Array<PieceProps>(piece);
@@ -278,7 +278,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given Bishop
    */
 
-  public getBishopMoves(piece: PieceProps) {
+  public getBishopMoves(piece: PieceProps): Array<PieceProps> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
     let moves = new Array<PieceProps>(piece);
@@ -351,7 +351,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given Queen
    */
 
-  public getQueenMoves(piece: PieceProps) {
+  public getQueenMoves(piece: PieceProps): Array<PieceProps> {
     let moves = new Array<PieceProps>();
     moves = [...moves, ...this.getBishopMoves(piece)];
     moves = [...moves, ...this.getRookMoves(piece)];
@@ -364,7 +364,7 @@ class Moves {
    * @returns {Array<PieceProps>} Valid moves for given King
    */
 
-  public getKingMoves(piece: PieceProps) {
+  public getKingMoves(piece: PieceProps): Array<PieceProps> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
     let moves = new Array<PieceProps>(piece);
