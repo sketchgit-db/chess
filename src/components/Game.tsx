@@ -1,11 +1,14 @@
 import React from "react";
 import Board from "./Board";
+import Timer from "./Timer";
 import { Alert, Card } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
 
 interface RouteParams {
   gameCode: string /** The gameCode for the current Game */;
 }
+
+const GAME_TIME = 300;
 
 import "../styles.css";
 
@@ -30,11 +33,23 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
    * State representing the points scored by the player with black pieces
    */
   const [blackPoints, setBlackPoints] = React.useState(0);
-
   /**
    * State representing the moves in the game so far
    */
   const [moves, setMoves] = React.useState(Array<string>());
+  /**
+   * State representing the time elapsed in the game for the black piece
+   */
+  const [blackTimePeriod, setBlackTimePeriod] = React.useState(GAME_TIME);
+  /**
+   * State representing the time elapsed in the game for the white piece
+   */
+  const [whiteTimePeriod, setWhiteTimePeriod] = React.useState(GAME_TIME);
+
+  /**
+   * Returns the moves so far in the game
+   * @returns {Array<React.ReactElement>} The moves
+   */
 
   const getMoves = () => {
     let gameMoves = [];
@@ -42,12 +57,15 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
       let move: string = "";
       move += (1 + index / 2).toString() + ". ";
       move += moves[index] + " ";
-      if (index + 1 < moves.length)
-        move += moves[index + 1] + "\n";
-      gameMoves.push(<Card.Text className="move">{move}</Card.Text>)
+      if (index + 1 < moves.length) move += moves[index + 1] + "\n";
+      gameMoves.push(
+        <Card.Text className={(index / 2) % 2 ? "odd" : "even"}>
+          {move}
+        </Card.Text>
+      );
     }
     return gameMoves;
-  }
+  };
 
   /**
    * Returns the Game Component
@@ -80,22 +98,36 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               className="score-section"
               border={currentTurn === "white" ? "none" : "dark"}
             >
-              <Card.Body>
+              <Card.Header>
                 <Card.Title>Black</Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
               </Card.Body>
               <Card.Footer>
-                <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
+                <Timer
+                  timePeriod={blackTimePeriod}
+                  setTimePeriod={setBlackTimePeriod}
+                  paused={currentTurn === "white"}
+                />
               </Card.Footer>
             </Card>
             <Card
               className="score-section"
               border={currentTurn === "white" ? "dark" : "none"}
             >
-              <Card.Body>
+              <Card.Header>
                 <Card.Title>White</Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
               </Card.Body>
               <Card.Footer>
-                <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
+                <Timer
+                  timePeriod={whiteTimePeriod}
+                  setTimePeriod={setWhiteTimePeriod}
+                  paused={currentTurn === "black"}
+                />
               </Card.Footer>
             </Card>
           </div>
@@ -104,12 +136,9 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               <Card.Header>
                 <Card.Title>Moves</Card.Title>
               </Card.Header>
-              <Card.Body className="moves-list">
-                <div>
-                  {getMoves()}
-                </div>
-              </Card.Body>
-              <Card.Footer></Card.Footer>
+              <div className="moves-list">
+                <div style={{ width: "100%" }}>{getMoves()}</div>
+              </div>
             </Card>
           </div>
         </div>
