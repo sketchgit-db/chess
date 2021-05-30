@@ -37,7 +37,7 @@ const Board: React.FC<BoardProps> = (props) => {
   /**
    * A dummy Piece representing an empty cell for capture moves
    */
-  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "");
+  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "", 0);
 
   /**
    * State storing whether the game is in progress or has completed
@@ -130,7 +130,8 @@ const Board: React.FC<BoardProps> = (props) => {
         black_row[index].label,
         index,
         black_row[index].value,
-        black_row[index].identifier
+        black_row[index].identifier,
+        0
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
@@ -143,14 +144,15 @@ const Board: React.FC<BoardProps> = (props) => {
         PieceDetails.BLACK_PAWN.label,
         index,
         PieceDetails.BLACK_PAWN.value,
-        PieceDetails.BLACK_PAWN.identifier
+        PieceDetails.BLACK_PAWN.identifier,
+        0
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
 
     // 8/8/8/8
     for (let index = 16; index < 48; index++) {
-      const _piece = new Piece("empty-cell", null, "", index, 0, "");
+      const _piece = new Piece("empty-cell", null, "", index, 0, "", 0);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
 
@@ -162,7 +164,8 @@ const Board: React.FC<BoardProps> = (props) => {
         PieceDetails.WHITE_PAWN.label,
         index,
         PieceDetails.WHITE_PAWN.value,
-        PieceDetails.WHITE_PAWN.identifier
+        PieceDetails.WHITE_PAWN.identifier,
+        0
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
@@ -175,7 +178,8 @@ const Board: React.FC<BoardProps> = (props) => {
         white_row[index % 8].label,
         index,
         white_row[index % 8].value,
-        white_row[index % 8].identifier
+        white_row[index % 8].identifier,
+        0
       );
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
@@ -308,6 +312,7 @@ const Board: React.FC<BoardProps> = (props) => {
       dummyPiece.position = posFrom;
       from.position = posTo;
       to.position = posFrom;
+      from.numMoves += 1;
       BoardConfig[posFrom].setPiece(dummyPiece);
       BoardConfig[posTo].setPiece(from);
       updateScores(from, to);
@@ -328,6 +333,7 @@ const Board: React.FC<BoardProps> = (props) => {
       console.log(`Making a move from ${posFrom} to ${posTo}`);
       to.position = posFrom;
       from.position = posTo;
+      from.numMoves += 1;
       BoardConfig[posFrom].setPiece(to);
       BoardConfig[posTo].setPiece(from);
       return false;
@@ -453,7 +459,7 @@ const Board: React.FC<BoardProps> = (props) => {
         <Modal.Header>
           <Modal.Title>Game Over !</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{`${winningColor} Won by checkMate`}</Modal.Body>
+        <Modal.Body>{`${winningColor} won by checkMate`}</Modal.Body>
         <Modal.Footer>
           <Button
             variant="primary"

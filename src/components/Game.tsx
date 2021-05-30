@@ -93,6 +93,7 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
         </Alert>
 
         <div className="game-data">
+
           <div className="score">
             <Card
               className="score-section"
@@ -104,13 +105,11 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               <Card.Body>
                 <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
               </Card.Body>
-              <Card.Footer>
-                <Timer
-                  timePeriod={blackTimePeriod}
-                  setTimePeriod={setBlackTimePeriod}
-                  paused={currentTurn === "white"}
-                />
-              </Card.Footer>
+              <Timer
+                timePeriod={blackTimePeriod}
+                setTimePeriod={setBlackTimePeriod}
+                paused={currentTurn === "white"}
+              />
             </Card>
             <Card
               className="score-section"
@@ -122,15 +121,14 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               <Card.Body>
                 <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
               </Card.Body>
-              <Card.Footer>
-                <Timer
-                  timePeriod={whiteTimePeriod}
-                  setTimePeriod={setWhiteTimePeriod}
-                  paused={currentTurn === "black"}
-                />
-              </Card.Footer>
+              <Timer
+                timePeriod={whiteTimePeriod}
+                setTimePeriod={setWhiteTimePeriod}
+                paused={currentTurn === "black"}
+              />
             </Card>
           </div>
+
           <div className="moves-panel-outline">
             <Card className="moves-panel" border="dark">
               <Card.Header>
@@ -141,6 +139,7 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               </div>
             </Card>
           </div>
+
         </div>
       </div>
     </div>

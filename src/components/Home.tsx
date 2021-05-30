@@ -9,6 +9,7 @@ import {
   Alert,
 } from "react-bootstrap";
 import GenerateCode from "../codeGenerator";
+import axios from "axios";
 
 import "../styles.css";
 
@@ -42,14 +43,14 @@ const Home: React.FC = () => {
   /**
    * Creates a new game
    */
-  const showCreateGame = () => {
+  const showCreateGameModal = () => {
     setCreateGame(true);
     setGameCode(GenerateCode(GAME_CODE_LENGTH));
   };
 
-  const cancelCreateGame = () => setCreateGame(false);
-  const showJoinGame = () => setJoinGame(true);
-  const cancelJoinGame = () => setJoinGame(false);
+  const hideCreateGameModal = () => setCreateGame(false);
+  const showJoinGameModal = () => setJoinGame(true);
+  const hideJoinGameModal = () => setJoinGame(false);
 
   /**
    * Update the form input in the game state
@@ -63,6 +64,18 @@ const Home: React.FC = () => {
    * Routes the current window to the game window
    */
   const handleCreateGame = () => {
+    const code = {
+      type: 'create',
+      gameCode: gameCode
+    }
+    axios
+      .post('http://localhost:4000/', code)
+      .then((res) => {
+        console.log(res.data.response);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
     history.push(`/${gameCode}`);
   };
 
@@ -70,7 +83,22 @@ const Home: React.FC = () => {
    * Checks if the gameCode entered by user matches an existing game and routes to the game
    */
   const handleJoinGame = () => {
-    if (gameCode === formInput) history.push(`/${gameCode}`);
+    // history.push(`/${gameCode}`);
+    const code = {
+      type: 'join',
+      gameCode: formInput
+    }
+    axios
+      .post('http://localhost:4000/', code)
+      .then((res) => {
+        console.log(res.data.response);
+        if (res.data.response === "ok gameCode match") {
+          history.push(`/${formInput}`);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   };
 
   /**
@@ -89,11 +117,11 @@ const Home: React.FC = () => {
         </Card.Header>
         <Card.Body>
           {/* Create New Game Button */}
-          <Button variant="outline-success" size="lg" onClick={showCreateGame}>
+          <Button variant="outline-success" size="lg" onClick={showCreateGameModal}>
             Create a new game
           </Button>
           {/* Modal associated with Create New Game */}
-          <Modal show={createGame} onHide={cancelCreateGame}>
+          <Modal show={createGame} onHide={hideCreateGameModal}>
             <Modal.Header>
               <Modal.Title>Create a new game</Modal.Title>
             </Modal.Header>
@@ -106,7 +134,7 @@ const Home: React.FC = () => {
             </Modal.Body>
 
             <Modal.Footer>
-              <Button variant="secondary" onClick={cancelCreateGame}>
+              <Button variant="secondary" onClick={hideCreateGameModal}>
                 Close
               </Button>
               <Button variant="primary" onClick={handleCreateGame}>
@@ -118,11 +146,11 @@ const Home: React.FC = () => {
           <hr />
 
           {/* Join Existing Game Button */}
-          <Button variant="outline-danger" size="lg" onClick={showJoinGame}>
+          <Button variant="outline-danger" size="lg" onClick={showJoinGameModal}>
             Join an existing game
           </Button>
           {/* Modal associated with Join Existing Game */}
-          <Modal show={joinGame} onHide={cancelJoinGame}>
+          <Modal show={joinGame} onHide={hideJoinGameModal}>
             <Modal.Header>
               <Modal.Title>Join an existing game</Modal.Title>
             </Modal.Header>
@@ -142,7 +170,7 @@ const Home: React.FC = () => {
             </Modal.Body>
 
             <Modal.Footer>
-              <Button variant="secondary" onClick={cancelJoinGame}>
+              <Button variant="secondary" onClick={hideJoinGameModal}>
                 Close
               </Button>
               <Button variant="primary" onClick={handleJoinGame}>

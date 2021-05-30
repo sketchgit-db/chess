@@ -12,7 +12,9 @@
   "license": "MIT",
   "dependencies": {
     "@types/react-router": "^5.1.14",
+    "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
+    "express": "^4.17.1",
     "react": "^17.0.2",
     "react-bootstrap": "^1.6.0",
     "react-dom": "^17.0.2",
@@ -31,6 +33,7 @@
     "babel-loader": "^8.2.2",
     "css-loader": "^5.2.4",
     "html-webpack-plugin": "^4.3.0",
+    "nodemon": "^2.0.7",
     "style-loader": "^2.0.0",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",

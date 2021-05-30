@@ -7,6 +7,7 @@
  * @property {number} value The chess piece relative value of the `piece` \
  *                          (King is assigned value 0 for the sake of implementation)
  * @property {string} identifier Algebraic notation identifier for the `piece`
+ * @property {number} numMoves The number of moves this piece has made in the game
  */
 
 class Piece {
@@ -16,6 +17,7 @@ class Piece {
   public position: number;
   public value: number;
   public identifier: string;
+  public numMoves: number;
 
   /**
    * @constructor
@@ -25,6 +27,7 @@ class Piece {
    * @param {number} _pos
    * @param {number} _value
    * @param {string} _indentifier
+   * @param {number} _numMoves
    */
   constructor(
     _type: string,
@@ -32,7 +35,8 @@ class Piece {
     _label: string,
     _pos: number,
     _value: number,
-    _indentifier: string
+    _indentifier: string,
+    _numMoves: number
   ) {
     this.type = _type;
     this.pieceName = _name;
@@ -40,6 +44,7 @@ class Piece {
     this.position = _pos;
     this.value = _value;
     this.identifier = _indentifier;
+    this.numMoves = _numMoves;
   }
 }
 

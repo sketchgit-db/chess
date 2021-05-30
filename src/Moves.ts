@@ -358,6 +358,51 @@ class Moves {
     return moves;
   }
 
+  public isCastlePossible(fromPos: number, toPos: number): boolean {
+    let isPossible = true;
+    // rook should not have moved
+    isPossible &&= (this.cellStatus[toPos].piece.numMoves === 0);
+    if (isPossible === false) return false;
+
+    const L = Math.min(fromPos, toPos) + 1, R = Math.max(fromPos, toPos) - 1;
+    // all squares between are empty
+    for (let index = L; index <= R; index++) {
+      isPossible &&= (this.cellStatus[index].piece.pieceName === null);
+    }
+    if (isPossible === false) return false;
+
+    // TODO - Implement actual move
+    return isPossible;
+  }
+
+  /**
+   * Get the possible castling moves
+   * @param {PieceProps} kingPiece The king piece for whom possible castling moves are to be found
+   * @returns The possible castling moves
+   */
+
+  public getCastlingMoves(kingPiece: PieceProps): Array<PieceProps> {
+    let moves = new Array<PieceProps>();
+    if (kingPiece.numMoves === 0) {
+      const pieceColor = this.getPieceColor(kingPiece);
+      const [x, y] = this.getCoordinates(kingPiece.position);
+      const kingSideCastlePos = this.getIndex(x, y + 3);
+      const queenSideCastlePos = this.getIndex(x, y - 4);
+
+      let kingSideCastleValid = true;
+      // piece should be rook
+      kingSideCastleValid &&= (this.cellStatus[kingSideCastlePos].piece.pieceName === (pieceColor + "-rook"));
+      kingSideCastleValid &&= this.isCastlePossible(kingPiece.position, kingSideCastlePos);
+
+      let queenSideCastleValid = true;
+      // piece should be rook
+      queenSideCastleValid &&= (this.cellStatus[queenSideCastlePos].piece.pieceName === (pieceColor + "-rook"));
+      queenSideCastleValid &&= this.isCastlePossible(kingPiece.position, queenSideCastlePos);
+    }
+
+    return moves;
+  }
+
   /**
    * Get all valid moves and captures for the given King `piece`
    * @param {PieceProps} piece
