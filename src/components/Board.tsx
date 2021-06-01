@@ -25,8 +25,8 @@ export interface BoardProps {
   setBlackPoints: any /** The callback to update the above `blackPoints` */;
   gameMoves: Array<string> /** State representing the moves in the game so far */;
   setGameMoves: any /** The callback to update the moves in the game */;
-  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-  gameCode: string;
+  socket: Socket<DefaultEventsMap, DefaultEventsMap> /** The socket for the current player */;
+  gameCode: string /** The gameCode for the current Game */; 
 }
 
 /**
@@ -41,15 +41,7 @@ const Board: React.FC<BoardProps> = (props) => {
   /**
    * A dummy Piece representing an empty cell for capture moves
    */
-  const dummyPiece: PieceProps = new Piece(
-    "empty-cell",
-    null,
-    "",
-    -1,
-    0,
-    "",
-    0
-  );
+  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "", 0);
 
   /**
    * State storing whether the game is in progress or has completed
@@ -221,9 +213,9 @@ const Board: React.FC<BoardProps> = (props) => {
   useEffect(() => {
     socket.once("nextTurn", (data) => {
       if (socket.id === data.socket) {
-        console.log("moveSelf");
+        console.log("+++ moveSelf +++");
       } else {
-        console.log("moveOpponent");
+        console.log("+++ moveOpponent +++");
       }
       console.log(data, currentTurn);
       const fromPos = data.fromPos;
@@ -234,24 +226,49 @@ const Board: React.FC<BoardProps> = (props) => {
       BoardConfig[toPos].setPiece(toPiece);
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
+      updateScores(toPiece, data.points);
     });
   }, [currentTurn]);
+
+  useEffect(() => {
+    socket.once('updateMoveTable', (data) => {
+      console.log('+++ updateMoveTable +++');
+      console.log(data);
+      getMoveRepresentation(
+        data.fromPiece,
+        data.toPiece,
+        data.isCapture,
+        data.ischeck,
+        data.ischeckmate
+      );
+    });
+  }, [currentTurn]);
+
+  useEffect(() => {
+    socket.once('gameComplete', (data) => {
+      console.log('+++ gameComplete +++');
+      console.log(data);
+      setGameComplete(true);
+      // @ts-ignore
+      setWinningColor(data.piece.pieceName?.split("-")[0]);
+    });
+  }, []);
 
   /**
    * Update the score for the capturing piece
    * @param {PieceProps} from The capturing piece
-   * @param {PieceProps} to The captured piece
+   * @param {number} value The value of the captured piece
    */
-  const updateScores = (from: PieceProps, to: PieceProps) => {
+  const updateScores = (from: PieceProps, value: number) => {
     if (from.pieceName?.split("-")[0] === "white") {
-      setWhitePoints(whitePoints + to.value);
+      setWhitePoints(whitePoints + value);
     } else {
-      setBlackPoints(blackPoints + to.value);
-    }
+      setBlackPoints(blackPoints + value);
+    }  
   };
 
   /**
-   *
+   * Get the algebraic representaion of the current move
    * @param {PieceProps} from The source piece
    * @param {PieceProps} to The destination piece (or empty cell)
    * @param {boolean} isCapture Whether a capture of piece took place
@@ -298,9 +315,10 @@ const Board: React.FC<BoardProps> = (props) => {
     const validMoves = moves.getKingMoves(BoardConfig[kingPos].piece);
     const checkMate = validMoves.every((val) => possibleMoves.includes(val));
     if (checkMate) {
-      setGameComplete(true);
-      // @ts-ignore
-      setWinningColor(piece.pieceName?.split("-")[0]);
+      socket.emit('checkmate', {
+        piece: piece,
+        gameCode: gameCode
+      });
       return true;
     } else {
       return false;
@@ -351,8 +369,6 @@ const Board: React.FC<BoardProps> = (props) => {
       from.position = posTo;
       to.position = posFrom;
       from.numMoves += 1;
-      // BoardConfig[posFrom].setPiece(dummyPiece);
-      // BoardConfig[posTo].setPiece(from);
 
       socket.emit("perform-move", {
         fromPos: posFrom,
@@ -360,9 +376,8 @@ const Board: React.FC<BoardProps> = (props) => {
         toPos: posTo,
         toPiece: from,
         gameCode: gameCode,
+        points: to.value
       });
-
-      updateScores(from, to);
     }
   };
 
@@ -381,8 +396,6 @@ const Board: React.FC<BoardProps> = (props) => {
       to.position = posFrom;
       from.position = posTo;
       from.numMoves += 1;
-      // BoardConfig[posFrom].setPiece(to);
-      // BoardConfig[posTo].setPiece(from);
 
       socket.emit("perform-move", {
         fromPos: posFrom,
@@ -390,6 +403,7 @@ const Board: React.FC<BoardProps> = (props) => {
         toPos: posTo,
         toPiece: from,
         gameCode: gameCode,
+        points: 0
       });
 
       return false;
@@ -431,13 +445,14 @@ const Board: React.FC<BoardProps> = (props) => {
       // check if the move caused a check to the opponent
       const [ischeck, ischeckmate] = isCheck(clickedPiece);
       // get the move representation
-      getMoveRepresentation(
-        fromPiece,
-        toPiece,
-        isCapture,
-        ischeck,
-        ischeckmate
-      );
+      socket.emit("getMoveRepresentation", {
+        fromPiece: fromPiece,
+        toPiece: toPiece,
+        isCapture: isCapture,
+        ischeck: ischeck,
+        ischeckmate: ischeckmate,
+        gameCode: gameCode
+      });
     } else {
       if (piece.pieceName?.split("-")[0] === currentTurn) {
         console.log(piece);

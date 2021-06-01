@@ -12,6 +12,7 @@ interface RouteParams {
 }
 
 export interface GameProps {
+  /** The socket for the current player */
   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
 }
 

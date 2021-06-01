@@ -48,6 +48,15 @@ const Home: React.FC<HomeProps> = (props) => {
   const { socket } = props;
 
   /**
+   * Start the game for both players
+   */
+  useEffect(() => {
+    socket.once("start-game", (gameCode) => {
+      history.push(`/${gameCode}`);
+    });
+  }, []);
+
+  /**
    * Creates a new game
    */
   const showCreateGameModal = () => {
@@ -73,8 +82,8 @@ const Home: React.FC<HomeProps> = (props) => {
   const handleCreateGame = () => {
     socket.emit("createGame", gameCode);
     socket.on("createGameResponse", (res: any) => {
+      console.log("Player 1 joined");
       console.log(res);
-      history.push(`/${gameCode}`);
     });
   };
 
@@ -84,10 +93,10 @@ const Home: React.FC<HomeProps> = (props) => {
   const handleJoinGame = () => {
     socket.emit("joinGame", formInput);
     socket.on("joinGameResponse", (res: any) => {
-      console.log(res);
       if (res.response === "player joined") {
-        history.push(`/${formInput}`);
+        console.log("Both players joined");
       }
+      console.log(res);
     });
   };
 

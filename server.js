@@ -49,25 +49,36 @@ io.on("connection", (socket) => {
         response: "player joined",
         playerId: 1,
       });
+      io.of("/").to(gameCode).emit("start-game", gameCode);
       console.log(`joinGame: `, io.of("/").adapter.rooms.get(gameCode));
-    } else if (room.size > 1) {
-      socket.emit("joinGameResponse", {
-        response: `err: Room ${gameCode} is full. Try another room`,
-        playerId: -1,
-      });
-      console.log(`err: Room ${gameCode} is full. Try another room`);
-    } else {
+    } else if (!room) {
       socket.emit("joinGameResponse", {
         response: `err: Room ${gameCode} doesn't exist. Try another room`,
         playerId: -1,
       });
       console.log(`err: Room ${gameCode} doesn't exist. Try another room`);
+    } else {
+      socket.emit("joinGameResponse", {
+        response: `err: Room ${gameCode} is full. Try another room`,
+        playerId: -1,
+      });
+      console.log(`err: Room ${gameCode} is full. Try another room`);
     }
   });
 
   socket.on("perform-move", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("nextTurn", data);
+  });
+
+  socket.on("getMoveRepresentation", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("updateMoveTable", data);
+  });
+
+  socket.on("checkmate", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("gameComplete", data);
   });
 
   socket.on("disconnect", () => {
