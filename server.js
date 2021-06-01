@@ -1,48 +1,78 @@
-const path = require('path');
+const path = require("path");
 const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
-const cors = require('cors');
+const cors = require("cors");
 
 const io = require("socket.io")(server, {
   cors: {
     origin: "*",
   },
 });
-const PORT = 4000;
+
+const PORT = process.env.PORT || 4000;
 
 app.use(
   cors({
     origin: "*",
-    credentials: true
+    credentials: true,
   })
-)
-app.use(express.static(__dirname + '/build'));
+);
+app.use(express.static(__dirname + "/build"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/build/index.html');
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/build/index.html");
 });
 
-let gameCode = "";
+io.on("connection", (socket) => {
+  console.log(`${socket.id} connected`);
 
-app.post('/', (req, res) => {
-  console.log(req.body);
-  if (req.body.type === "create") {
-    gameCode = req.body.gameCode;
-    res.status(200).json({"response": "ok game created"});
-  } else if (req.body.type === "join") {
-    if (req.body.gameCode === gameCode) {
-      res.status(200).json({"response": "ok gameCode match"});
+  socket.on("createGame", (gameCode) => {
+    console.log("createGame: " + gameCode);
+    socket.join(gameCode);
+    socket.emit("createGameResponse", {
+      response: "player joined",
+      playerId: 0,
+    });
+    console.log(`createGame: `, io.of("/").adapter.rooms.get(gameCode));
+  });
+
+  socket.on("joinGame", (gameCode) => {
+    console.log("joinGame: " + gameCode);
+    const room = io.of("/").adapter.rooms.get(gameCode);
+    if (room && room.size === 1) {
+      socket.join(gameCode);
+      socket.to(gameCode).emit("player 2 joined");
+      socket.emit("joinGameResponse", {
+        response: "player joined",
+        playerId: 1,
+      });
+      console.log(`joinGame: `, io.of("/").adapter.rooms.get(gameCode));
+    } else if (room.size > 1) {
+      socket.emit("joinGameResponse", {
+        response: `err: Room ${gameCode} is full. Try another room`,
+        playerId: -1,
+      });
+      console.log(`err: Room ${gameCode} is full. Try another room`);
     } else {
-      res.status(200).json({"response": "Sorry. Code Mismatch"});
+      socket.emit("joinGameResponse", {
+        response: `err: Room ${gameCode} doesn't exist. Try another room`,
+        playerId: -1,
+      });
+      console.log(`err: Room ${gameCode} doesn't exist. Try another room`);
     }
-  }
-});
+  });
 
-io.on('connection', (socket) => {
-  console.log('A user connected');
+  socket.on("perform-move", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("nextTurn", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`${socket.id} disconnected`);
+  });
 });
 
 server.listen(PORT, () => {

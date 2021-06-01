@@ -3,24 +3,35 @@ import Board from "./Board";
 import Timer from "./Timer";
 import { Alert, Card } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
+import { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "socket.io-client/build/typed-events";
+import "../styles.css";
 
 interface RouteParams {
   gameCode: string /** The gameCode for the current Game */;
 }
 
-const GAME_TIME = 300;
+export interface GameProps {
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+}
 
-import "../styles.css";
+const GAME_TIME = 300;
 
 /**
  * The Game component
  * Renders the Game with all the Board and Game Information like scores, current turn
- * @param {RouteComponentProps<RouteParams>} props The props passed by the `Home` component
+ * @param {GameProps} props The props passed by the `Home` component
  * @returns {React.ReactElement} React component
  */
 
-const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
-  const { gameCode } = props.match.params;
+const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (
+  props
+) => {
+  const {
+    socket,
+    match: { params },
+  } = props;
+  const { gameCode } = params;
   /**
    * State representing the piece which will play the current turn
    */
@@ -59,7 +70,10 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
       move += moves[index] + " ";
       if (index + 1 < moves.length) move += moves[index + 1] + "\n";
       gameMoves.push(
-        <Card.Text className={(index / 2) % 2 ? "odd" : "even"}>
+        <Card.Text
+          key={`moveLine_${index / 2}`}
+          className={(index / 2) % 2 ? "odd" : "even"}
+        >
           {move}
         </Card.Text>
       );
@@ -84,6 +98,8 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
           setBlackPoints={setBlackPoints}
           gameMoves={moves}
           setGameMoves={setMoves}
+          socket={socket}
+          gameCode={gameCode}
         />
       </div>
       {/* Game information such as scores, moves etc. */}
@@ -93,7 +109,6 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
         </Alert>
 
         <div className="game-data">
-
           <div className="score">
             <Card
               className="score-section"
@@ -139,7 +154,6 @@ const Game: React.FC<RouteComponentProps<RouteParams>> = (props) => {
               </div>
             </Card>
           </div>
-
         </div>
       </div>
     </div>

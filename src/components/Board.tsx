@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import Square from "./Square";
@@ -6,6 +6,8 @@ import PieceDetails from "../PieceDetails";
 import Piece, { PieceProps } from "../Piece";
 import Hints from "../Hints";
 import "../styles.css";
+import { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 
 export interface BoardStatusProps {
   piece: PieceProps /** The piece under consideration */;
@@ -23,6 +25,8 @@ export interface BoardProps {
   setBlackPoints: any /** The callback to update the above `blackPoints` */;
   gameMoves: Array<string> /** State representing the moves in the game so far */;
   setGameMoves: any /** The callback to update the moves in the game */;
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+  gameCode: string;
 }
 
 /**
@@ -37,7 +41,15 @@ const Board: React.FC<BoardProps> = (props) => {
   /**
    * A dummy Piece representing an empty cell for capture moves
    */
-  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "", 0);
+  const dummyPiece: PieceProps = new Piece(
+    "empty-cell",
+    null,
+    "",
+    -1,
+    0,
+    "",
+    0
+  );
 
   /**
    * State storing whether the game is in progress or has completed
@@ -61,6 +73,8 @@ const Board: React.FC<BoardProps> = (props) => {
     setBlackPoints,
     gameMoves,
     setGameMoves,
+    socket,
+    gameCode,
   } = props;
 
   /**
@@ -201,6 +215,29 @@ const Board: React.FC<BoardProps> = (props) => {
   const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
 
   /**
+   * Sync game status across both players
+   */
+
+  useEffect(() => {
+    socket.once("nextTurn", (data) => {
+      if (socket.id === data.socket) {
+        console.log("moveSelf");
+      } else {
+        console.log("moveOpponent");
+      }
+      console.log(data, currentTurn);
+      const fromPos = data.fromPos;
+      const fromPiece = data.fromPiece;
+      const toPos = data.toPos;
+      const toPiece = data.toPiece;
+      BoardConfig[fromPos].setPiece(fromPiece);
+      BoardConfig[toPos].setPiece(toPiece);
+      setCurrentTurn(currentTurn === "white" ? "black" : "white");
+      updateClickedPiece(dummyPiece);
+    });
+  }, [currentTurn]);
+
+  /**
    * Update the score for the capturing piece
    * @param {PieceProps} from The capturing piece
    * @param {PieceProps} to The captured piece
@@ -278,7 +315,8 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const isCheck = (piece: PieceProps): [boolean, boolean] => {
     const moves = new Hints(BoardConfig);
-    const [found, selfKingPos, oppKingPos, possibleMoves] = moves.isCheck(piece);
+    const [found, selfKingPos, oppKingPos, possibleMoves] =
+      moves.isCheck(piece);
     if (found) {
       BoardConfig[oppKingPos].setColor("check");
       const ischeckMate = isCheckMate(piece, oppKingPos, possibleMoves);
@@ -313,8 +351,17 @@ const Board: React.FC<BoardProps> = (props) => {
       from.position = posTo;
       to.position = posFrom;
       from.numMoves += 1;
-      BoardConfig[posFrom].setPiece(dummyPiece);
-      BoardConfig[posTo].setPiece(from);
+      // BoardConfig[posFrom].setPiece(dummyPiece);
+      // BoardConfig[posTo].setPiece(from);
+
+      socket.emit("perform-move", {
+        fromPos: posFrom,
+        fromPiece: dummyPiece,
+        toPos: posTo,
+        toPiece: from,
+        gameCode: gameCode,
+      });
+
       updateScores(from, to);
     }
   };
@@ -334,8 +381,17 @@ const Board: React.FC<BoardProps> = (props) => {
       to.position = posFrom;
       from.position = posTo;
       from.numMoves += 1;
-      BoardConfig[posFrom].setPiece(to);
-      BoardConfig[posTo].setPiece(from);
+      // BoardConfig[posFrom].setPiece(to);
+      // BoardConfig[posTo].setPiece(from);
+
+      socket.emit("perform-move", {
+        fromPos: posFrom,
+        fromPiece: to,
+        toPos: posTo,
+        toPiece: from,
+        gameCode: gameCode,
+      });
+
       return false;
     } else {
       capture(from, to);
@@ -382,11 +438,9 @@ const Board: React.FC<BoardProps> = (props) => {
         ischeck,
         ischeckmate
       );
-      // next turn
-      setCurrentTurn(currentTurn === "white" ? "black" : "white");
-      updateClickedPiece(dummyPiece);
     } else {
       if (piece.pieceName?.split("-")[0] === currentTurn) {
+        console.log(piece);
         updateClickedPiece(piece);
         moves.hideHints(hintCells);
         const validMoves = moves.showHints(piece);
@@ -405,6 +459,7 @@ const Board: React.FC<BoardProps> = (props) => {
     for (let index = 0; index < 64; index++) {
       squares.push(
         <Square
+          key={`square_${index}`}
           color={BoardConfig[index].color}
           position={index}
           piece={BoardConfig[index].piece}
@@ -417,26 +472,36 @@ const Board: React.FC<BoardProps> = (props) => {
 
   /**
    * Get the rank labels for the chess board
+   * @param {number} side Rank direction (left or right)
    * @returns {Array<React.ReactElement>} Array of Rank divs
    */
 
-  const getRanks = () => {
+  const getRanks = (side: number) => {
     const ranks = [];
     for (let index = 8; index >= 1; index--) {
-      ranks.push(<div className="ranks">{index}</div>);
+      ranks.push(
+        <div className="ranks" key={`rank${side}_${index}`}>
+          {index}
+        </div>
+      );
     }
     return ranks;
   };
 
   /**
    * Get the file labels for the chess board
+   * @param {number} side File direction (top or bottom)
    * @returns {Array<React.ReactElement>} Array of File divs
    */
 
-  const getFiles = () => {
+  const getFiles = (side: number) => {
     const files = [];
     for (let index = 97; index <= 104; index++) {
-      files.push(<div className="files">{String.fromCharCode(index)}</div>);
+      files.push(
+        <div className="files" key={`file${side}_${index - 97}`}>
+          {String.fromCharCode(index)}
+        </div>
+      );
     }
     return files;
   };
@@ -448,13 +513,13 @@ const Board: React.FC<BoardProps> = (props) => {
 
   return (
     <div className="outline-1">
-      <div className="file-list">{getFiles()}</div>
+      <div className="file-list">{getFiles(0)}</div>
       <div className="outline-2">
-        <div className="rank-list">{getRanks()}</div>
+        <div className="rank-list">{getRanks(0)}</div>
         <div className="board">{renderSquares()}</div>
-        <div className="rank-list">{getRanks()}</div>
+        <div className="rank-list">{getRanks(1)}</div>
       </div>
-      <div className="file-list">{getFiles()}</div>
+      <div className="file-list">{getFiles(1)}</div>
       <Modal show={gameComplete}>
         <Modal.Header>
           <Modal.Title>Game Over !</Modal.Title>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import {
   Card,
@@ -9,11 +9,16 @@ import {
   Alert,
 } from "react-bootstrap";
 import GenerateCode from "../codeGenerator";
-import axios from "axios";
+import { Socket } from "socket.io-client";
 
 import "../styles.css";
+import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 
 const GAME_CODE_LENGTH = 6;
+
+export interface HomeProps {
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
+}
 
 /**
  * The Home component
@@ -21,7 +26,7 @@ const GAME_CODE_LENGTH = 6;
  * @returns {React.ReactElement} React component
  */
 
-const Home: React.FC = () => {
+const Home: React.FC<HomeProps> = (props) => {
   const history = useHistory();
   /**
    * State representing the gameCode
@@ -39,6 +44,8 @@ const Home: React.FC = () => {
    * Toggle to enable / disable the join existing game button
    */
   const [joinGame, setJoinGame] = React.useState(false);
+
+  const { socket } = props;
 
   /**
    * Creates a new game
@@ -64,41 +71,24 @@ const Home: React.FC = () => {
    * Routes the current window to the game window
    */
   const handleCreateGame = () => {
-    const code = {
-      type: 'create',
-      gameCode: gameCode
-    }
-    axios
-      .post('http://localhost:4000/', code)
-      .then((res) => {
-        console.log(res.data.response);
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-    history.push(`/${gameCode}`);
+    socket.emit("createGame", gameCode);
+    socket.on("createGameResponse", (res: any) => {
+      console.log(res);
+      history.push(`/${gameCode}`);
+    });
   };
 
   /**
    * Checks if the gameCode entered by user matches an existing game and routes to the game
    */
   const handleJoinGame = () => {
-    // history.push(`/${gameCode}`);
-    const code = {
-      type: 'join',
-      gameCode: formInput
-    }
-    axios
-      .post('http://localhost:4000/', code)
-      .then((res) => {
-        console.log(res.data.response);
-        if (res.data.response === "ok gameCode match") {
-          history.push(`/${formInput}`);
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-      });
+    socket.emit("joinGame", formInput);
+    socket.on("joinGameResponse", (res: any) => {
+      console.log(res);
+      if (res.response === "player joined") {
+        history.push(`/${formInput}`);
+      }
+    });
   };
 
   /**
@@ -117,7 +107,11 @@ const Home: React.FC = () => {
         </Card.Header>
         <Card.Body>
           {/* Create New Game Button */}
-          <Button variant="outline-success" size="lg" onClick={showCreateGameModal}>
+          <Button
+            variant="outline-success"
+            size="lg"
+            onClick={showCreateGameModal}
+          >
             Create a new game
           </Button>
           {/* Modal associated with Create New Game */}
@@ -146,7 +140,11 @@ const Home: React.FC = () => {
           <hr />
 
           {/* Join Existing Game Button */}
-          <Button variant="outline-danger" size="lg" onClick={showJoinGameModal}>
+          <Button
+            variant="outline-danger"
+            size="lg"
+            onClick={showJoinGameModal}
+          >
             Join an existing game
           </Button>
           {/* Modal associated with Join Existing Game */}
