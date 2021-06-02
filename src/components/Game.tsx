@@ -25,13 +25,8 @@ const GAME_TIME = 300;
  * @returns {React.ReactElement} React component
  */
 
-const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (
-  props
-) => {
-  const {
-    socket,
-    match: { params },
-  } = props;
+const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => {
+  const { socket,  match: { params }} = props;
   const { gameCode } = params;
   /**
    * State representing the piece which will play the current turn

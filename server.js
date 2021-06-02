@@ -26,6 +26,8 @@ app.get("/", (req, res) => {
   res.sendFile(__dirname + "/build/index.html");
 });
 
+let socketPlayerMapping = new Map();
+
 io.on("connection", (socket) => {
   console.log(`${socket.id} connected`);
 
@@ -36,6 +38,7 @@ io.on("connection", (socket) => {
       response: "player joined",
       playerId: 0,
     });
+    socketPlayerMapping.set(socket.id, "white");
     console.log(`createGame: `, io.of("/").adapter.rooms.get(gameCode));
   });
 
@@ -44,25 +47,26 @@ io.on("connection", (socket) => {
     const room = io.of("/").adapter.rooms.get(gameCode);
     if (room && room.size === 1) {
       socket.join(gameCode);
-      socket.to(gameCode).emit("player 2 joined");
+      socketPlayerMapping.set(socket.id, "black");
       socket.emit("joinGameResponse", {
         response: "player joined",
         playerId: 1,
       });
+      console.log(socketPlayerMapping);
       io.of("/").to(gameCode).emit("start-game", gameCode);
       console.log(`joinGame: `, io.of("/").adapter.rooms.get(gameCode));
     } else if (!room) {
       socket.emit("joinGameResponse", {
-        response: `err: Room ${gameCode} doesn't exist. Try another room`,
+        response: `Room ${gameCode} doesn't exist. Please check the code`,
         playerId: -1,
       });
-      console.log(`err: Room ${gameCode} doesn't exist. Try another room`);
+      console.log(`Room ${gameCode} doesn't exist. Please check the code`);
     } else {
       socket.emit("joinGameResponse", {
-        response: `err: Room ${gameCode} is full. Try another room`,
+        response: `Room ${gameCode} is full. Try another room`,
         playerId: -1,
       });
-      console.log(`err: Room ${gameCode} is full. Try another room`);
+      console.log(`Room ${gameCode} is full. Try another room`);
     }
   });
 
@@ -81,8 +85,14 @@ io.on("connection", (socket) => {
     io.of("/").to(data.gameCode).emit("gameComplete", data);
   });
 
+  socket.on("getColor", (data) => {
+    data = { ...data, color: socketPlayerMapping.get(data.id)};
+    io.of("/").to(data.gameCode).emit("setPlayerColor", data);
+  });
+
   socket.on("disconnect", () => {
     console.log(`${socket.id} disconnected`);
+    socketPlayerMapping.delete(socket.id);
   });
 });
 

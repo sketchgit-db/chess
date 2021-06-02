@@ -45,6 +45,10 @@ const Home: React.FC<HomeProps> = (props) => {
    */
   const [joinGame, setJoinGame] = React.useState(false);
 
+  const [waitingMessage, setWaitingMessage] = React.useState("");
+
+  const [wrongCodeMessage, setWrongCodeMessage] = React.useState("");
+
   const { socket } = props;
 
   /**
@@ -64,9 +68,15 @@ const Home: React.FC<HomeProps> = (props) => {
     setGameCode(GenerateCode(GAME_CODE_LENGTH));
   };
 
-  const hideCreateGameModal = () => setCreateGame(false);
+  const hideCreateGameModal = () => {
+    setCreateGame(false);
+    setWaitingMessage("");
+  };
   const showJoinGameModal = () => setJoinGame(true);
-  const hideJoinGameModal = () => setJoinGame(false);
+  const hideJoinGameModal = () => {
+    setJoinGame(false);
+    setWrongCodeMessage("");
+  };
 
   /**
    * Update the form input in the game state
@@ -81,9 +91,10 @@ const Home: React.FC<HomeProps> = (props) => {
    */
   const handleCreateGame = () => {
     socket.emit("createGame", gameCode);
-    socket.on("createGameResponse", (res: any) => {
+    socket.once("createGameResponse", (res: any) => {
       console.log("Player 1 joined");
       console.log(res);
+      setWaitingMessage("Waiting for opponent to join ...");
     });
   };
 
@@ -92,9 +103,13 @@ const Home: React.FC<HomeProps> = (props) => {
    */
   const handleJoinGame = () => {
     socket.emit("joinGame", formInput);
-    socket.on("joinGameResponse", (res: any) => {
+    socket.once("joinGameResponse", (res: any) => {
       if (res.response === "player joined") {
         console.log("Both players joined");
+        setWaitingMessage("");
+        setWrongCodeMessage("");
+      } else {
+        setWrongCodeMessage(res.response);
       }
       console.log(res);
     });
@@ -107,9 +122,8 @@ const Home: React.FC<HomeProps> = (props) => {
   return (
     <div className="home-container">
       <Card
-        className="text-center"
+        className="game-input"
         border="secondary"
-        style={{ width: "400px" }}
       >
         <Card.Header style={{ fontSize: "1.5em" }}>
           Let's start playing
@@ -133,6 +147,9 @@ const Home: React.FC<HomeProps> = (props) => {
               <Alert variant="success">
                 {" "}
                 Your Game Code is <b>{gameCode}</b>
+              </Alert>
+              <Alert show={waitingMessage !== ""} variant="warning">
+                {waitingMessage}
               </Alert>
             </Modal.Body>
 
@@ -174,6 +191,9 @@ const Home: React.FC<HomeProps> = (props) => {
                   type="text"
                 />
               </InputGroup>
+              <Alert show={wrongCodeMessage !== ""} variant="danger">
+                {wrongCodeMessage}
+              </Alert>
             </Modal.Body>
 
             <Modal.Footer>
@@ -187,6 +207,26 @@ const Home: React.FC<HomeProps> = (props) => {
           </Modal>
         </Card.Body>
       </Card>
+      <Alert className="instructions" variant="info">
+        <Alert.Heading style={{ textAlign: "center", fontSize: "4vmin" }}>
+          How to Play?
+        </Alert.Heading>
+        <ol>
+          <li>
+            To start a new game, click the <b>Create a new game</b> button
+          </li>
+          <ul>
+            <li>
+              Copy the displayed game code and share it with your opponent
+            </li>
+            <li>The game starts once your opponent enters the code</li>
+          </ul>
+          <li>
+            To join an existing game, request the game code from your opponent,
+            click on <b>Join an existing game</b>, and enter the code
+          </li>
+        </ol>
+      </Alert>
     </div>
   );
 };

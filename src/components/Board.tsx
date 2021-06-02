@@ -54,6 +54,11 @@ const Board: React.FC<BoardProps> = (props) => {
   const [winningColor, setWinningColor] = React.useState("");
 
   /**
+   * The color played by the player on socket `socket`
+   */
+  const [playerColor, setPlayerColor] = React.useState("");
+
+  /**
    * Destructuring props into member variables
    */
   const {
@@ -68,6 +73,26 @@ const Board: React.FC<BoardProps> = (props) => {
     socket,
     gameCode,
   } = props;
+
+  /**
+   * Set the piece color used by the player on socket `socket`
+   */
+
+  useEffect(() => {
+    socket.emit("getColor", {
+      id: socket.id,
+      gameCode: gameCode
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.on("setPlayerColor", (data) => {
+      console.log("setPlayerColor ", socket.id, data, playerColor);
+      if (data.id === socket.id) {
+        setPlayerColor(data.color);
+      }
+    });
+  }, []);
 
   /**
    * Returns an object of type `BoardProps` for a given piece
@@ -230,6 +255,10 @@ const Board: React.FC<BoardProps> = (props) => {
     });
   }, [currentTurn]);
 
+  /**
+   * Update moves for both players
+   */
+
   useEffect(() => {
     socket.once('updateMoveTable', (data) => {
       console.log('+++ updateMoveTable +++');
@@ -243,6 +272,10 @@ const Board: React.FC<BoardProps> = (props) => {
       );
     });
   }, [currentTurn]);
+
+  /**
+   * Update game completion status for both players
+   */
 
   useEffect(() => {
     socket.once('gameComplete', (data) => {
@@ -259,6 +292,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * @param {PieceProps} from The capturing piece
    * @param {number} value The value of the captured piece
    */
+
   const updateScores = (from: PieceProps, value: number) => {
     if (from.pieceName?.split("-")[0] === "white") {
       setWhitePoints(whitePoints + value);
@@ -454,7 +488,8 @@ const Board: React.FC<BoardProps> = (props) => {
         gameCode: gameCode
       });
     } else {
-      if (piece.pieceName?.split("-")[0] === currentTurn) {
+      const color = piece.pieceName?.split("-")[0];
+      if (color === currentTurn && color == playerColor) {
         console.log(piece);
         updateClickedPiece(piece);
         moves.hideHints(hintCells);
