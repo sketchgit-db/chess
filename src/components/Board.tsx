@@ -273,6 +273,20 @@ const Board: React.FC<BoardProps> = (props) => {
     });
   }, [currentTurn]);
 
+
+  useEffect(() => {
+    socket.once('markCheck', (data) => {
+      BoardConfig[data.position].setColor(data.color);
+    });
+  }, [currentTurn]);
+
+  useEffect(() => {
+    socket.once("unmarkCheck", (data) => {
+      BoardConfig[data.position0].setColor(data.color0);
+      BoardConfig[data.position1].setColor(data.color1);
+    });
+  }, [currentTurn]);
+
   /**
    * Update game completion status for both players
    */
@@ -370,16 +384,21 @@ const Board: React.FC<BoardProps> = (props) => {
     const [found, selfKingPos, oppKingPos, possibleMoves] =
       moves.isCheck(piece);
     if (found) {
-      BoardConfig[oppKingPos].setColor("check");
+      socket.emit("setCheck", {
+        gameCode: gameCode,
+        position: oppKingPos,
+        color: "check"
+      });
       const ischeckMate = isCheckMate(piece, oppKingPos, possibleMoves);
       return [true, ischeckMate];
     } else {
-      BoardConfig[selfKingPos].setColor(
-        Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white"
-      );
-      BoardConfig[oppKingPos].setColor(
-        Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white"
-      );
+      socket.emit("unsetCheck", {
+        gameCode: gameCode,
+        position0: selfKingPos,
+        color0: Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
+        position1: oppKingPos,
+        color1: Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white"
+      });
       return [false, false];
     }
   };
@@ -391,28 +410,21 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const capture = (from: PieceProps, to: PieceProps) => {
-    // TODO: Implement check and check-mate
-    if (to.pieceName?.split("-")[1] === "king") {
-      const posTo = to.position;
-      BoardConfig[posTo].setColor("check");
-    } else {
-      const posFrom = from.position,
-        posTo = to.position;
-      console.log(`Making a capture from ${posFrom} to ${posTo}`);
-      dummyPiece.position = posFrom;
-      from.position = posTo;
-      to.position = posFrom;
-      from.numMoves += 1;
+    const posFrom = from.position, posTo = to.position;
+    console.log(`Making a capture from ${posFrom} to ${posTo}`);
+    dummyPiece.position = posFrom;
+    from.position = posTo;
+    to.position = posFrom;
+    from.numMoves += 1;
 
-      socket.emit("perform-move", {
-        fromPos: posFrom,
-        fromPiece: dummyPiece,
-        toPos: posTo,
-        toPiece: from,
-        gameCode: gameCode,
-        points: to.value
-      });
-    }
+    socket.emit("perform-move", {
+      fromPos: posFrom,
+      fromPiece: dummyPiece,
+      toPos: posTo,
+      toPiece: from,
+      gameCode: gameCode,
+      points: to.value
+    });
   };
 
   /**

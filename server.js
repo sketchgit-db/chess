@@ -80,6 +80,16 @@ io.on("connection", (socket) => {
     io.of("/").to(data.gameCode).emit("updateMoveTable", data);
   });
 
+  socket.on("setCheck", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("markCheck", data);
+  });
+
+  socket.on("unsetCheck", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("unmarkCheck", data);
+  });
+
   socket.on("checkmate", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("gameComplete", data);

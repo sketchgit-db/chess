@@ -208,23 +208,26 @@ const Home: React.FC<HomeProps> = (props) => {
         </Card.Body>
       </Card>
       <Alert className="instructions" variant="info">
-        <Alert.Heading style={{ textAlign: "center", fontSize: "4vmin" }}>
+        <Alert.Heading style={{ textAlign: "center"}}>
           How to Play?
         </Alert.Heading>
         <ol>
           <li>
-            To start a new game, click the <b>Create a new game</b> button
+            To start a new game, click <b>Create a new game</b>
           </li>
           <ul>
             <li>
-              Copy the displayed game code and share it with your opponent
+              Copy the displayed Game Code, share it with your opponent and click <b>Start Game</b>
             </li>
             <li>The game starts once your opponent enters the code</li>
           </ul>
           <li>
-            To join an existing game, request the game code from your opponent,
-            click on <b>Join an existing game</b>, and enter the code
+            To join an existing game, request the Game Code from your opponent {"& "}
+            click <b>Join an existing game</b>
           </li>
+          <ul>
+            <li>Enter the code and click <b>Start Game</b></li>
+          </ul>
         </ol>
       </Alert>
     </div>

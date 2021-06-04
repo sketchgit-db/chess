@@ -5,7 +5,7 @@ import Game from "./components/Game";
 import socketClient, { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 
-const SERVER = "";
+const SERVER = "http://localhost:4000";
 
 const App: React.FC = () => {
   let socket: Socket<DefaultEventsMap, DefaultEventsMap> = socketClient(SERVER);
