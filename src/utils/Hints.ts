@@ -1,6 +1,6 @@
-import { PieceProps } from "./Piece";
-import { BoardStatusProps } from "./components/Board";
-import Moves from "./Moves";
+import { PieceProps } from "../core/Piece";
+import { BoardStatusProps } from "../components/Board";
+import Moves from "../core/Moves";
 
 /**
  * Class representing the valid movements on UI for a given piece at a given board configuration

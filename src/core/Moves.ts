@@ -1,5 +1,5 @@
 import { PieceProps } from "./Piece";
-import { BoardStatusProps } from "./components/Board";
+import { BoardStatusProps } from "../components/Board";
 
 /**
  * Class computing the valid movements for all chess pieces at a given board configuration

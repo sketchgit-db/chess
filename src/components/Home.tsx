@@ -8,7 +8,7 @@ import {
   FormControl,
   Alert,
 } from "react-bootstrap";
-import GenerateCode from "../codeGenerator";
+import GenerateCode from "../utils/codeGenerator";
 import { Socket } from "socket.io-client";
 
 import "../styles.css";
