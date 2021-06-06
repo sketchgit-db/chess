@@ -83,6 +83,11 @@ io.on("connection", (socket) => {
   socket.on("castle", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("performCastling", data);
+  });
+
+  socket.on("promote", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("performPromotion", data);
   })
 
   socket.on("setCheck", (data) => {

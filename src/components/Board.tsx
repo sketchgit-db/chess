@@ -2,7 +2,8 @@ import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
 import Square from "./Square";
-import PieceDetails from "../core/PieceDetails";
+import PromotionModal from "./PromotionModal";
+import PieceDetails, { PieceDetailsProps } from "../core/PieceDetails";
 import Piece, { PieceProps } from "../core/Piece";
 import Hints from "../utils/Hints";
 import "../styles.css";
@@ -25,8 +26,8 @@ export interface BoardProps {
   setBlackPoints: any /** The callback to update the above `blackPoints` */;
   gameMoves: Array<string> /** State representing the moves in the game so far */;
   setGameMoves: any /** The callback to update the moves in the game */;
-  socket: Socket<DefaultEventsMap, DefaultEventsMap> /** The socket for the current player */;
-  gameCode: string /** The gameCode for the current Game */; 
+  socket: Socket<DefaultEventsMap,DefaultEventsMap> /** The socket for the current player */;
+  gameCode: string /** The gameCode for the current Game */;
 }
 
 /**
@@ -58,6 +59,20 @@ const Board: React.FC<BoardProps> = (props) => {
    */
   const [playerColor, setPlayerColor] = React.useState("");
 
+  // /**
+  //  * State storing the piece a pawn is promoted into
+  //  */
+  // const [promotionPiece, setPromotionPiece] = React.useState<PieceDetailsProps>(
+  //   { pieceName: "", label: "", value: 0, identifier: "" }
+  // );
+
+  /**
+   * State storing the color of pawn promoted
+   */
+  const [pawnPromotionType, setPawnPromotionType] = React.useState("");
+
+  const [promotionPos, setPromotionPos] = React.useState([-1, -1]);
+
   /**
    * Destructuring props into member variables
    */
@@ -74,9 +89,15 @@ const Board: React.FC<BoardProps> = (props) => {
     gameCode,
   } = props;
 
-  const getEmptyCell = (position: number) => {
+  /**
+   * Get a new piece (often used to create an empty cell on capture)
+   * @param {number} position
+   * @returns {PieceProps} The required Piece
+   */
+
+  const getEmptyCell = (position: number): PieceProps => {
     return new Piece("empty-cell", null, "", position, 0, "", 0);
-  }
+  };
 
   /**
    * Set the piece color used by the player on socket `socket`
@@ -85,13 +106,12 @@ const Board: React.FC<BoardProps> = (props) => {
   useEffect(() => {
     socket.emit("getColor", {
       id: socket.id,
-      gameCode: gameCode
+      gameCode: gameCode,
     });
   }, []);
 
   useEffect(() => {
     socket.on("setPlayerColor", (data) => {
-      console.log("setPlayerColor ", socket.id, data, playerColor);
       if (data.id === socket.id) {
         setPlayerColor(data.color);
       }
@@ -246,7 +266,6 @@ const Board: React.FC<BoardProps> = (props) => {
       } else {
         console.log("+++ moveOpponent +++");
       }
-      // console.log(data, currentTurn);
       BoardConfig[data.fromPos].setPiece(data.fromPiece);
       BoardConfig[data.toPos].setPiece(data.toPiece);
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
@@ -260,8 +279,8 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   useEffect(() => {
-    socket.once('updateMoveTable', (data) => {
-      console.log('+++ updateMoveTable +++');
+    socket.once("updateMoveTable", (data) => {
+      console.log("+++ updateMoveTable +++");
       console.log(data);
       getMoveRepresentation(
         data.fromPiece,
@@ -274,7 +293,7 @@ const Board: React.FC<BoardProps> = (props) => {
   }, [currentTurn]);
 
   useEffect(() => {
-    socket.once('performCastling', (data) => {
+    socket.once("performCastling", (data) => {
       BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
       BoardConfig[data.newKingPos].setPiece(data.newKingPiece);
 
@@ -287,7 +306,17 @@ const Board: React.FC<BoardProps> = (props) => {
   }, [currentTurn]);
 
   useEffect(() => {
-    socket.once('markCheck', (data) => {
+    socket.once("performPromotion", (data) => {
+      BoardConfig[data.oldPiecePos].setPiece(data.oldPiece);
+      BoardConfig[data.newPiecePos].setPiece(data.newPiece);
+      setCurrentTurn(currentTurn === "white" ? "black" : "white");
+      updateClickedPiece(dummyPiece);
+      setPawnPromotionType("");
+    });
+  }, [currentTurn]);
+
+  useEffect(() => {
+    socket.once("markCheck", (data) => {
       BoardConfig[data.position].setColor(data.color);
     });
   }, [currentTurn]);
@@ -304,8 +333,8 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   useEffect(() => {
-    socket.once('gameComplete', (data) => {
-      console.log('+++ gameComplete +++');
+    socket.once("gameComplete", (data) => {
+      console.log("+++ gameComplete +++");
       console.log(data);
       setGameComplete(true);
       // @ts-ignore
@@ -324,7 +353,7 @@ const Board: React.FC<BoardProps> = (props) => {
       setWhitePoints(whitePoints + value);
     } else {
       setBlackPoints(blackPoints + value);
-    }  
+    }
   };
 
   /**
@@ -351,19 +380,19 @@ const Board: React.FC<BoardProps> = (props) => {
     ];
     let moveRep = "";
     if (moveType === 2) {
-      if (from.position > to.position) {
-        moveRep = "0-0";
-      } else {
-        moveRep = "0-0-0";
-      }
+      moveRep = (from.position > to.position) ? "0-0" : "0-0-0";
     } else {
-      moveRep += from.identifier + ((moveType === 1) ? "x" : "") + y + x;
-      if (isCheckMate) {
-        moveRep += "#";
-      } else if (isCheck) {
-        moveRep += "+";
-      }  
+      moveRep = from.identifier + (moveType === 1 ? "x" : "") + y + x;
+      if (moveType === 3) {
+        moveRep += "=" + to.identifier;
+      }
     }
+    if (isCheckMate) {
+      moveRep += "#";
+    } else if (isCheck) {
+      moveRep += "+";
+    }
+    console.log("Move: ", moveType, moveRep);
     setGameMoves([...gameMoves, moveRep]);
   };
 
@@ -375,18 +404,14 @@ const Board: React.FC<BoardProps> = (props) => {
    * @returns {boolean} true if the opponent king has been checkmated, false otherwise
    */
 
-  const isCheckMate = (
-    piece: PieceProps,
-    kingPos: number,
-    possibleMoves: Array<number>
-  ): boolean => {
+  const isCheckMate = (piece: PieceProps, kingPos: number, possibleMoves: Array<number>) => {
     const moves = new Hints(BoardConfig);
     const validMoves = moves.getKingMoves(BoardConfig[kingPos].piece);
     const checkMate = validMoves.every((val) => possibleMoves.includes(val));
     if (checkMate) {
-      socket.emit('checkmate', {
+      socket.emit("checkmate", {
         piece: piece,
-        gameCode: gameCode
+        gameCode: gameCode,
       });
       return true;
     } else {
@@ -404,12 +429,11 @@ const Board: React.FC<BoardProps> = (props) => {
     const moves = new Hints(BoardConfig);
     const [found, selfKingPos, oppKingPos, possibleMoves] =
       moves.isCheck(piece);
-    console.log(found, selfKingPos, oppKingPos, possibleMoves);
     if (found) {
       socket.emit("setCheck", {
         gameCode: gameCode,
         position: oppKingPos,
-        color: "check"
+        color: "check",
       });
       const ischeckMate = isCheckMate(piece, oppKingPos, possibleMoves);
       return [true, ischeckMate];
@@ -417,13 +441,22 @@ const Board: React.FC<BoardProps> = (props) => {
       socket.emit("unsetCheck", {
         gameCode: gameCode,
         position0: selfKingPos,
-        color0: Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
+        color0:
+          Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
         position1: oppKingPos,
-        color1: Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white"
+        color1: Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white",
       });
       return [false, false];
     }
   };
+
+  const checkPromotion = (from: PieceProps, to: PieceProps): boolean => {
+    let possible: boolean = true;
+    possible &&= (from.pieceName?.split("-")[1] === "pawn");
+    let rank = Math.floor(to.position / 8);
+    possible &&= (rank == 0 || rank == 7);
+    return possible;
+  }
 
   /**
    * Performs the capture move
@@ -432,7 +465,9 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const capture = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
+    // console.log("checkPromotion: ", checkPromotion(from, to));
+    const posFrom = from.position,
+    posTo = to.position;
     console.log(`Making a capture from ${posFrom} to ${posTo}`);
     const emptyCell = getEmptyCell(posFrom);
     from.position = posTo;
@@ -445,19 +480,44 @@ const Board: React.FC<BoardProps> = (props) => {
       toPos: posTo,
       toPiece: from,
       gameCode: gameCode,
-      points: to.value
+      points: to.value,
     });
   };
 
+  /**
+   * Peforms promotion of the pawn
+   * @param {PieceProps} from The promoted pawn
+   * @param {PieceProps} to The piece promoted into
+   */
+
+  const performPromotion = (from: PieceProps, to: PieceProps) => {
+    const newPos = [from.position, to.position];
+    const color = from.type.split("-")[0];
+    setPromotionPos([...newPos]);
+    setPawnPromotionType(color + "-promotion");
+  };
+
+  /**
+   * Peforms castling move
+   * @param {PieceProps} from The king involved in castling
+   * @param {PieceProps} to The rook involved in castling
+   */
+
   const performCastling = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
+    const posFrom = from.position,
+      posTo = to.position;
     const emptyCell0 = getEmptyCell(posFrom);
     const emptyCell1 = getEmptyCell(posTo);
-    let newKingPos = posFrom, newRookPos = posTo;
-    if (posFrom < posTo) { // kingSide
-      newKingPos += 2; newRookPos -= 2;
-    } else { // queenSide
-      newKingPos -= 2; newRookPos += 3;
+    let newKingPos = posFrom,
+      newRookPos = posTo;
+    if (posFrom < posTo) {
+      // kingSide
+      newKingPos += 2;
+      newRookPos -= 2;
+    } else {
+      // queenSide
+      newKingPos -= 2;
+      newRookPos += 3;
     }
     from.position = newKingPos;
     from.numMoves += 1;
@@ -472,7 +532,7 @@ const Board: React.FC<BoardProps> = (props) => {
       newRookPiece: to,
       oldRookPos: posTo,
       newRookPos: newRookPos,
-      gameCode: gameCode
+      gameCode: gameCode,
     });
   };
 
@@ -480,7 +540,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * Perform the move (simple move (or) capture)
    * @param {PieceProps} from The piece attempting to move
    * @param {PieceProps} to The cell to which the move attempt is made
-   * @returns {number} 0 - Normal move, 1 - capture, 2 - castling
+   * @returns {number} 0 - Normal move, 1 - capture, 2 - castling, 3 - promotion
    */
 
   const makeMove = (from: PieceProps, to: PieceProps): number => {
@@ -498,12 +558,15 @@ const Board: React.FC<BoardProps> = (props) => {
         toPos: posTo,
         toPiece: from,
         gameCode: gameCode,
-        points: 0
+        points: 0,
       });
       return 0;
     } else if (to.type.split("-")[0] === from.type.split("-")[0]) {
       performCastling(from, to);
       return 2;
+    } else if (checkPromotion(from, to)) {
+      performPromotion(from, to);
+      return 3;
     } else {
       capture(from, to);
       return 1;
@@ -538,6 +601,7 @@ const Board: React.FC<BoardProps> = (props) => {
       const fromPiece = clickedPiece,
         toPiece = piece;
       const moveType = makeMove(clickedPiece, piece);
+      console.log("moveType", moveType);
       moves.hideHints(hintCells);
       // check if the move caused a check to the opponent
       const [ischeck, ischeckmate] = isCheck(clickedPiece);
@@ -548,7 +612,7 @@ const Board: React.FC<BoardProps> = (props) => {
         moveType: moveType,
         ischeck: ischeck,
         ischeckmate: ischeckmate,
-        gameCode: gameCode
+        gameCode: gameCode,
       });
     } else {
       const color = piece.pieceName?.split("-")[0];
@@ -648,6 +712,14 @@ const Board: React.FC<BoardProps> = (props) => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <PromotionModal
+        show={pawnPromotionType !== ""}
+        socket={socket}
+        promotionType={pawnPromotionType} 
+        fromPos={promotionPos[0]}
+        toPos={promotionPos[1]}
+        gameCode={gameCode}
+      />
     </div>
   );
 };

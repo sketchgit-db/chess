@@ -1,14 +1,13 @@
 import React, { MouseEventHandler } from "react";
-import { PieceProps } from "../Piece";
+import { PieceProps } from "../core/Piece";
 import "../styles.css";
 
 export interface SquareProps {
   color: string /** The color of the square cell */;
-  position: number /** The index [0, 64) of the square cell measured from a1 on the board */;
+  position: number /** The index [0, 64) of the square cell measured from a8 on the board */;
   piece: PieceProps /** The piece (if any) on the square cell */;
-  onClick: (
-    piece: PieceProps
-  ) => any /** The onClick handler for the piece on the square cell */;
+  /** The onClick handler for the piece on the square cell */  
+  onClick: (piece: PieceProps) => any ;
 }
 
 /**
@@ -19,17 +18,9 @@ export interface SquareProps {
  */
 
 const Square: React.FC<SquareProps> = (props) => {
-  /**
-   * Color of the cell 'white' or 'black'
-   */
+
   const className: string = props.color;
-  /**
-   * The position of the cell
-   */
   const position: number = props.position;
-  /**
-   * The piece on the cell
-   */
   const piece: PieceProps = props.piece;
 
   /**
@@ -40,7 +31,7 @@ const Square: React.FC<SquareProps> = (props) => {
     if (piece.pieceName !== null) {
       console.log(
         `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
-          1 + Math.floor(piece.position / 8)
+          8 - Math.floor(piece.position / 8)
         }`
       );
     }

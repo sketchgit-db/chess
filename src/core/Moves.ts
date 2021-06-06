@@ -182,7 +182,7 @@ class Moves {
   /**
    * Determine if the king opposite to `piece` is in check by any pieces of the color of `piece`
    * @param {PieceProps} piece
-   * @returns {[boolean, number, number, Array<PieceProps>]} The position of the king in check (if any, else -1)
+   * @returns {[boolean, number, number, Array<number>]} The position of the king in check (if any, else -1)
    */
 
    public isCheck(piece: PieceProps): [boolean, number, number, Array<number>] {

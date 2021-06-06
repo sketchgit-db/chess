@@ -40,7 +40,7 @@ class Hints extends Moves {
 
   /**
    * Hide the validMoves, usually when a move is made or a different piece is considered
-   * @param {Array<PieceProps>} hintCells Array of valid moves computed using `showHints`
+   * @param {Array<number>} hintCells Array of valid moves computed using `showHints`
    */
 
   public hideHints = (hintCells: Array<number>) => {
