@@ -46,11 +46,7 @@ class Moves {
         return [true, true];
       } else if (this.getPieceColor(this.BoardConfig[index].piece) !== color) {
         // opponent piece
-        if (this.getPieceType(this.BoardConfig[index].piece) !== "king") {
-          return [true, false];
-        } else {
-          return [false, false];
-        }
+        return [true, false];
       } else {
         // self piece
         return [false, false];
@@ -105,11 +101,7 @@ class Moves {
         this.getPieceColor(this.BoardConfig[index].piece) !== color
       ) {
         // opponent cell
-        if (this.getPieceType(this.BoardConfig[index].piece) !== "king") {
-          return [true, false];
-        } else {
-          return [false, false];
-        }
+        return [true, false];
       } else {
         // self or empty cell
         return [false, false];
@@ -157,13 +149,13 @@ class Moves {
   /**
    * Get the valid moves for a given `piece`
    * @param {PieceProps} piece The piece whose valid moves are to be found
-   * @returns {Array<PieceProps>} An array containing the valid Moves
+   * @returns {Array<number>} An array containing the valid Moves
    */
 
-   protected showValidMoves = (piece: PieceProps): Array<PieceProps> => {
+   protected showValidMoves = (piece: PieceProps): Array<number> => {
     const index = piece.position;
     const pieceName = this.getPieceType(piece);
-    let validMoves: Array<PieceProps> = new Array<PieceProps>();
+    let validMoves: Array<number> = new Array<number>();
     switch (pieceName) {
       case "pawn":
         validMoves = this.getPawnMoves(piece);
@@ -193,11 +185,11 @@ class Moves {
    * @returns {[boolean, number, number, Array<PieceProps>]} The position of the king in check (if any, else -1)
    */
 
-   public isCheck(piece: PieceProps): [boolean, number, number, Array<PieceProps>] {
+   public isCheck(piece: PieceProps): [boolean, number, number, Array<number>] {
     const attackerColor = this.getPieceColor(piece);
     const targetPiece =
       (attackerColor === "white" ? "black" : "white") + "-king";
-    let possibleMoves = new Array<PieceProps>();
+    let possibleMoves = new Array<number>();
     let oppKingPos = -1, selfKingPos = -1, found = false;
     for (let index = 0; index < 64; index++) {
       if (this.getPieceType(this.BoardConfig[index].piece) === null) {
@@ -211,8 +203,8 @@ class Moves {
         const moves = this.showValidMoves(this.BoardConfig[index].piece);
         possibleMoves = [...possibleMoves, ...moves];
         for (let pos = 0; pos < moves.length; pos++) {
-          if (moves[pos].pieceName === targetPiece) {
-            oppKingPos = moves[pos].position;
+          if (this.BoardConfig[moves[pos]].piece.pieceName === targetPiece) {
+            oppKingPos = moves[pos];
             found = true;
           }
         }
@@ -226,54 +218,54 @@ class Moves {
   /**
    * Get all valid moves and captures for the given Pawn `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given Pawn
+   * @returns {Array<number>} Valid moves for given Pawn
    */
 
-  public getPawnMoves(piece: PieceProps): Array<PieceProps> {
+  public getPawnMoves(piece: PieceProps): Array<number> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>(piece);
+    let moves = [piece.position];
     if (color === "white") {
       // Pawn free movement
       let [currMove, nextMove] = this.checkPawnMoveValidity(x - 1, y, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x - 1, y)].piece);
+        moves.push(this.getIndex(x - 1, y));
       }
       if (nextMove === true) {
         let [currMove, nextMove] = this.checkPawnMoveValidity(x - 2, y, color);
         if (x == 6 && currMove) {
-          moves.push(this.BoardConfig[this.getIndex(x - 2, y)].piece);
+          moves.push(this.getIndex(x - 2, y));
         }
       }
       // Pawn capture
       [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y + 1, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x - 1, y + 1)].piece);
+        moves.push(this.getIndex(x - 1, y + 1));
       }
       [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y - 1, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x - 1, y - 1)].piece);
+        moves.push(this.getIndex(x - 1, y - 1));
       }
     } else {
       // Pawn free movement
       let [currMove, nextMove] = this.checkPawnMoveValidity(x + 1, y, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + 1, y)].piece);
+        moves.push(this.getIndex(x + 1, y));
       }
       if (nextMove === true) {
         let [currMove, nextMove] = this.checkPawnMoveValidity(x + 2, y, color);
         if (x == 1 && currMove) {
-          moves.push(this.BoardConfig[this.getIndex(x + 2, y)].piece);
+          moves.push(this.getIndex(x + 2, y));
         }
       }
       // Pawn capture
       [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + 1, y + 1)].piece);
+        moves.push(this.getIndex(x + 1, y + 1));
       }
       [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y - 1, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + 1, y - 1)].piece);
+        moves.push(this.getIndex(x + 1, y - 1));
       }
     }
     return moves;
@@ -282,17 +274,17 @@ class Moves {
   /**
    * Get all valid moves and captures for the given Rook `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given Rook
+   * @returns {Array<number>} Valid moves for given Rook
    */
 
-  public getRookMoves(piece: PieceProps): Array<PieceProps> {
+  public getRookMoves(piece: PieceProps): Array<number> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>(piece);
+    let moves = [piece.position];
     for (let dx = 1; dx < 8 - x; dx++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + dx, y)].piece);
+        moves.push(this.getIndex(x + dx, y));
         if (nextMove === false) {
           break;
         }
@@ -303,7 +295,7 @@ class Moves {
     for (let dx = -1; dx >= -x; dx--) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + dx, y)].piece);
+        moves.push(this.getIndex(x + dx, y));
         if (nextMove === false) {
           break;
         }
@@ -314,7 +306,7 @@ class Moves {
     for (let dy = 1; dy < 8 - y; dy++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x, y + dy, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x, y + dy)].piece);
+        moves.push(this.getIndex(x, y + dy));
         if (nextMove === false) {
           break;
         }
@@ -325,7 +317,7 @@ class Moves {
     for (let dy = -1; dy >= -y; dy--) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x, y + dy, color);
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x, y + dy)].piece);
+        moves.push(this.getIndex(x, y + dy));
         if (nextMove === false) {
           break;
         }
@@ -339,13 +331,13 @@ class Moves {
   /**
    * Get all valid moves and captures for the given Knight `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given Knight
+   * @returns {Array<number>} Valid moves for given Knight
    */
 
-  public getKnightMoves(piece: PieceProps): Array<PieceProps> {
+  public getKnightMoves(piece: PieceProps): Array<number> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>(piece);
+    let moves = [piece.position];
     const dx = [2, 2, -2, -2, 1, 1, -1, -1];
     const dy = [1, -1, 1, -1, 2, -2, 2, -2];
     for (let index = 0; index < 8; index++) {
@@ -355,9 +347,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(
-          this.BoardConfig[this.getIndex(x + dx[index], y + dy[index])].piece
-        );
+        moves.push(this.getIndex(x + dx[index], y + dy[index]));
       }
     }
     return moves;
@@ -366,13 +356,13 @@ class Moves {
   /**
    * Get all valid moves and captures for the given Bishop `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given Bishop
+   * @returns {Array<number>} Valid moves for given Bishop
    */
 
-  public getBishopMoves(piece: PieceProps): Array<PieceProps> {
+  public getBishopMoves(piece: PieceProps): Array<number> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>(piece);
+    let moves = [piece.position];
     for (let index = 1; index < 8 - Math.max(x, y); index++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(
         x + index,
@@ -380,7 +370,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + index, y + index)].piece);
+        moves.push(this.getIndex(x + index, y + index));
         if (nextMove === false) {
           break;
         }
@@ -395,7 +385,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x + index, y + index)].piece);
+        moves.push(this.getIndex(x + index, y + index));
         if (nextMove === false) {
           break;
         }
@@ -410,7 +400,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x - index, y + index)].piece);
+        moves.push(this.getIndex(x - index, y + index));
         if (nextMove === false) {
           break;
         }
@@ -425,7 +415,7 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(this.BoardConfig[this.getIndex(x - index, y + index)].piece);
+        moves.push(this.getIndex(x - index, y + index));
         if (nextMove === false) {
           break;
         }
@@ -439,11 +429,11 @@ class Moves {
   /**
    * Get all valid moves and captures for the given Queen `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given Queen
+   * @returns {Array<number>} Valid moves for given Queen
    */
 
-  public getQueenMoves(piece: PieceProps): Array<PieceProps> {
-    let moves = new Array<PieceProps>();
+  public getQueenMoves(piece: PieceProps): Array<number> {
+    let moves = new Array<number>();
     moves = [...moves, ...this.getBishopMoves(piece)];
     moves = [...moves, ...this.getRookMoves(piece)];
     return moves;
@@ -456,7 +446,7 @@ class Moves {
         continue;
       } else if (this.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
         const moves = this.showValidMoves(this.BoardConfig[index].piece);
-        if (moves.includes(this.BoardConfig[position].piece)) {
+        if (moves.includes(position)) {
           return false;
         }
       }
@@ -485,14 +475,14 @@ class Moves {
     const attackerColor = (kingColor === "white" ? "black" : "white");
 
     if (fromPos < toPos) { // kingSide
-      for (let index = fromPos; index <= fromPos + 2; fromPos++) {
+      for (let index = fromPos; index <= fromPos + 2; index++) {
         isPossible &&= (this.isSafe(index, attackerColor));
         if (isPossible === false) {
           return false;
         }
       }
     } else { // queenSide
-      for (let index = fromPos; index >= fromPos - 2; fromPos--) {
+      for (let index = fromPos; index >= fromPos - 2; index--) {
         isPossible &&= (this.isSafe(index, attackerColor));
         if (isPossible === false) {
           return false;
@@ -509,8 +499,8 @@ class Moves {
    * @returns The possible castling moves
    */
 
-  public getCastlingMoves(kingPiece: PieceProps): Array<PieceProps> {
-    let moves = new Array<PieceProps>();
+  public getCastlingMoves(kingPiece: PieceProps): Array<number> {
+    let moves = new Array<number>();
     if (kingPiece.numMoves === 0) {
       const pieceColor = this.getPieceColor(kingPiece);
       const [x, y] = this.getCoordinates(kingPiece.position);
@@ -523,7 +513,7 @@ class Moves {
       kingSideCastleValid &&= this.isCastlePossible(kingPiece.position, kingSideCastlePos);
 
       if (kingSideCastleValid) {
-
+        moves.push(kingSideCastlePos);
       }
 
       let queenSideCastleValid = true;
@@ -532,7 +522,7 @@ class Moves {
       queenSideCastleValid &&= this.isCastlePossible(kingPiece.position, queenSideCastlePos);
 
       if (queenSideCastleValid) {
-
+        moves.push(queenSideCastlePos);
       }
     }
 
@@ -542,13 +532,13 @@ class Moves {
   /**
    * Get all valid moves and captures for the given King `piece`
    * @param {PieceProps} piece
-   * @returns {Array<PieceProps>} Valid moves for given King
+   * @returns {Array<number>} Valid moves for given King
    */
 
-  public getKingMoves(piece: PieceProps): Array<PieceProps> {
+  public getKingMoves(piece: PieceProps): Array<number> {
     const color = this.getPieceColor(piece);
     const [x, y] = this.getCoordinates(piece.position);
-    let moves = new Array<PieceProps>(piece);
+    let moves = [piece.position];
     const dx = [1, 1, 1, -1, -1, -1, 0, 0];
     const dy = [0, 1, -1, 0, 1, -1, 1, -1];
     for (let index = 0; index < 8; index++) {
@@ -558,11 +548,10 @@ class Moves {
         color
       );
       if (currMove) {
-        moves.push(
-          this.BoardConfig[this.getIndex(x + dx[index], y + dy[index])].piece
-        );
+        moves.push(this.getIndex(x + dx[index], y + dy[index]));
       }
     }
+    moves = [...moves, ...this.getCastlingMoves(piece)];
     return moves;
   }
 }

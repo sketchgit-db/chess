@@ -22,19 +22,19 @@ class Hints extends Moves {
    * Public wrapper over the `showValidMoves` function
    * Get the valid moves for a given `piece`
    * @param {PieceProps} piece The piece whose valid moves are to be found
-   * @returns {Array<PieceProps>} An array containing the valid Moves
+   * @returns {Array<number>} An array containing the valid Moves
    */
 
-  public showHints = (piece: PieceProps): Array<PieceProps> => {
+  public showHints = (piece: PieceProps): Array<number> => {
     if (this.getPieceType(piece) !== null) {
       const validMoves = this.showValidMoves(piece);
-      validMoves.forEach((_piece) => {
-        const _index = _piece.position;
-        this.BoardConfig[_index].setColor("selected");
+      validMoves.forEach((index) => {
+        if (this.getPieceType(this.BoardConfig[index].piece) !== "king")
+          this.BoardConfig[index].setColor("selected");
       });
       return validMoves;
     } else {
-      return new Array<PieceProps>();
+      return new Array<number>();
     }
   };
 
@@ -43,9 +43,8 @@ class Hints extends Moves {
    * @param {Array<PieceProps>} hintCells Array of valid moves computed using `showHints`
    */
 
-  public hideHints = (hintCells: Array<PieceProps>) => {
-    hintCells.forEach((piece) => {
-      const index = piece.position;
+  public hideHints = (hintCells: Array<number>) => {
+    hintCells.forEach((index) => {
       this.BoardConfig[index].setColor(
         Math.floor(index / 8 + index) % 2 ? "black" : "white"
       );

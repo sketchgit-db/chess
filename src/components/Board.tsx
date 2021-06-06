@@ -74,6 +74,10 @@ const Board: React.FC<BoardProps> = (props) => {
     gameCode,
   } = props;
 
+  const getEmptyCell = (position: number) => {
+    return new Piece("empty-cell", null, "", position, 0, "", 0);
+  }
+
   /**
    * Set the piece color used by the player on socket `socket`
    */
@@ -225,7 +229,7 @@ const Board: React.FC<BoardProps> = (props) => {
   /**
    * The list of hint cells found for a given Piece
    */
-  const [hintCells, updateHintCells] = React.useState(Array<PieceProps>());
+  const [hintCells, updateHintCells] = React.useState(Array<number>());
   /**
    * The last clicked piece (used to perform moves and captures)
    */
@@ -242,16 +246,12 @@ const Board: React.FC<BoardProps> = (props) => {
       } else {
         console.log("+++ moveOpponent +++");
       }
-      console.log(data, currentTurn);
-      const fromPos = data.fromPos;
-      const fromPiece = data.fromPiece;
-      const toPos = data.toPos;
-      const toPiece = data.toPiece;
-      BoardConfig[fromPos].setPiece(fromPiece);
-      BoardConfig[toPos].setPiece(toPiece);
+      // console.log(data, currentTurn);
+      BoardConfig[data.fromPos].setPiece(data.fromPiece);
+      BoardConfig[data.toPos].setPiece(data.toPiece);
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
-      updateScores(toPiece, data.points);
+      updateScores(data.toPiece, data.points);
     });
   }, [currentTurn]);
 
@@ -266,13 +266,25 @@ const Board: React.FC<BoardProps> = (props) => {
       getMoveRepresentation(
         data.fromPiece,
         data.toPiece,
-        data.isCapture,
+        data.moveType,
         data.ischeck,
         data.ischeckmate
       );
     });
   }, [currentTurn]);
 
+  useEffect(() => {
+    socket.once('performCastling', (data) => {
+      BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
+      BoardConfig[data.newKingPos].setPiece(data.newKingPiece);
+
+      BoardConfig[data.oldRookPos].setPiece(data.oldRookPiece);
+      BoardConfig[data.newRookPos].setPiece(data.newRookPiece);
+
+      setCurrentTurn(currentTurn === "white" ? "black" : "white");
+      updateClickedPiece(dummyPiece);
+    });
+  }, [currentTurn]);
 
   useEffect(() => {
     socket.once('markCheck', (data) => {
@@ -319,7 +331,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * Get the algebraic representaion of the current move
    * @param {PieceProps} from The source piece
    * @param {PieceProps} to The destination piece (or empty cell)
-   * @param {boolean} isCapture Whether a capture of piece took place
+   * @param {number} moveType 0 - Normal move, 1 - capture, 2 - castling
    * @param {boolean} isCheck Whether the opponent king was given a check
    * @param {boolean} isCheckMate Whether the opponent king was checkmate
    * @returns {string} The algebraic notation of the move
@@ -328,7 +340,7 @@ const Board: React.FC<BoardProps> = (props) => {
   const getMoveRepresentation = (
     from: PieceProps,
     to: PieceProps,
-    isCapture: boolean,
+    moveType: number,
     isCheck: boolean,
     isCheckMate: boolean
   ) => {
@@ -337,11 +349,20 @@ const Board: React.FC<BoardProps> = (props) => {
       (8 - Math.floor(posTo / 8)).toString(),
       String.fromCharCode(97 + (posTo % 8)),
     ];
-    let moveRep = from.identifier + (isCapture ? "x" : "") + y + x;
-    if (isCheckMate) {
-      moveRep += "#";
-    } else if (isCheck) {
-      moveRep += "+";
+    let moveRep = "";
+    if (moveType === 2) {
+      if (from.position > to.position) {
+        moveRep = "0-0";
+      } else {
+        moveRep = "0-0-0";
+      }
+    } else {
+      moveRep += from.identifier + ((moveType === 1) ? "x" : "") + y + x;
+      if (isCheckMate) {
+        moveRep += "#";
+      } else if (isCheck) {
+        moveRep += "+";
+      }  
     }
     setGameMoves([...gameMoves, moveRep]);
   };
@@ -357,7 +378,7 @@ const Board: React.FC<BoardProps> = (props) => {
   const isCheckMate = (
     piece: PieceProps,
     kingPos: number,
-    possibleMoves: Array<PieceProps>
+    possibleMoves: Array<number>
   ): boolean => {
     const moves = new Hints(BoardConfig);
     const validMoves = moves.getKingMoves(BoardConfig[kingPos].piece);
@@ -383,6 +404,7 @@ const Board: React.FC<BoardProps> = (props) => {
     const moves = new Hints(BoardConfig);
     const [found, selfKingPos, oppKingPos, possibleMoves] =
       moves.isCheck(piece);
+    console.log(found, selfKingPos, oppKingPos, possibleMoves);
     if (found) {
       socket.emit("setCheck", {
         gameCode: gameCode,
@@ -412,14 +434,14 @@ const Board: React.FC<BoardProps> = (props) => {
   const capture = (from: PieceProps, to: PieceProps) => {
     const posFrom = from.position, posTo = to.position;
     console.log(`Making a capture from ${posFrom} to ${posTo}`);
-    dummyPiece.position = posFrom;
+    const emptyCell = getEmptyCell(posFrom);
     from.position = posTo;
     to.position = posFrom;
     from.numMoves += 1;
 
     socket.emit("perform-move", {
       fromPos: posFrom,
-      fromPiece: dummyPiece,
+      fromPiece: emptyCell,
       toPos: posTo,
       toPiece: from,
       gameCode: gameCode,
@@ -427,14 +449,41 @@ const Board: React.FC<BoardProps> = (props) => {
     });
   };
 
+  const performCastling = (from: PieceProps, to: PieceProps) => {
+    const posFrom = from.position, posTo = to.position;
+    const emptyCell0 = getEmptyCell(posFrom);
+    const emptyCell1 = getEmptyCell(posTo);
+    let newKingPos = posFrom, newRookPos = posTo;
+    if (posFrom < posTo) { // kingSide
+      newKingPos += 2; newRookPos -= 2;
+    } else { // queenSide
+      newKingPos -= 2; newRookPos += 3;
+    }
+    from.position = newKingPos;
+    from.numMoves += 1;
+    to.position = newRookPos;
+    to.numMoves += 1;
+    socket.emit("castle", {
+      oldKingPiece: emptyCell0,
+      newKingPiece: from,
+      oldKingPos: posFrom,
+      newKingPos: newKingPos,
+      oldRookPiece: emptyCell1,
+      newRookPiece: to,
+      oldRookPos: posTo,
+      newRookPos: newRookPos,
+      gameCode: gameCode
+    });
+  };
+
   /**
    * Perform the move (simple move (or) capture)
    * @param {PieceProps} from The piece attempting to move
    * @param {PieceProps} to The cell to which the move attempt is made
-   * @returns {boolean} true if the move was a piece capture, false otherwise
+   * @returns {number} 0 - Normal move, 1 - capture, 2 - castling
    */
 
-  const makeMove = (from: PieceProps, to: PieceProps): boolean => {
+  const makeMove = (from: PieceProps, to: PieceProps): number => {
     if (to.pieceName === null) {
       const posFrom = from.position,
         posTo = to.position;
@@ -451,11 +500,13 @@ const Board: React.FC<BoardProps> = (props) => {
         gameCode: gameCode,
         points: 0
       });
-
-      return false;
+      return 0;
+    } else if (to.type.split("-")[0] === from.type.split("-")[0]) {
+      performCastling(from, to);
+      return 2;
     } else {
       capture(from, to);
-      return true;
+      return 1;
     }
   };
 
@@ -486,7 +537,7 @@ const Board: React.FC<BoardProps> = (props) => {
       // make a move (or capture)
       const fromPiece = clickedPiece,
         toPiece = piece;
-      const isCapture = makeMove(clickedPiece, piece);
+      const moveType = makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
       // check if the move caused a check to the opponent
       const [ischeck, ischeckmate] = isCheck(clickedPiece);
@@ -494,7 +545,7 @@ const Board: React.FC<BoardProps> = (props) => {
       socket.emit("getMoveRepresentation", {
         fromPiece: fromPiece,
         toPiece: toPiece,
-        isCapture: isCapture,
+        moveType: moveType,
         ischeck: ischeck,
         ischeckmate: ischeckmate,
         gameCode: gameCode
@@ -502,7 +553,6 @@ const Board: React.FC<BoardProps> = (props) => {
     } else {
       const color = piece.pieceName?.split("-")[0];
       if (color === currentTurn && color == playerColor) {
-        console.log(piece);
         updateClickedPiece(piece);
         moves.hideHints(hintCells);
         const validMoves = moves.showHints(piece);
