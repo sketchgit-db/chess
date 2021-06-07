@@ -1,8 +1,8 @@
-import PieceDetails, { PieceDetailsProps } from "../core/PieceDetails";
+import { PieceDetailsProps } from "../core/PieceDetails";
 import Piece, { PieceProps } from "../core/Piece";
 
 /**
- * Get a new piece (often used to create an empty cell on capture)
+ * Get a new empty cell
  * @param {number} position
  * @returns {PieceProps} The required Piece
  */
@@ -17,20 +17,8 @@ export const getEmptyCell = (position: number): PieceProps => {
  * @returns {PieceProps} The required Piece
  */
 
-export const getNewPiece = (
-  pieceType: string,
-  data: PieceDetailsProps,
-  position: number
-) => {
-  return new Piece(
-    pieceType,
-    data.pieceName,
-    data.label,
-    position,
-    data.value,
-    data.identifier,
-    0
-  );
+export const getNewPiece = (pieceType: string, data: PieceDetailsProps, position: number) => {
+  return new Piece(pieceType, data.pieceName, data.label, position, data.value, data.identifier, 0);
 };
 
 /**

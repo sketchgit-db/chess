@@ -88,7 +88,7 @@ io.on("connection", (socket) => {
   socket.on("promote", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("performPromotion", data);
-  })
+  });
 
   socket.on("setCheck", (data) => {
     data = { ...data, socket: socket.id };
@@ -106,7 +106,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getColor", (data) => {
-    data = { ...data, color: socketPlayerMapping.get(data.id)};
+    data = { ...data, color: socketPlayerMapping.get(data.id) };
     io.of("/").to(data.gameCode).emit("setPlayerColor", data);
   });
 

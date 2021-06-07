@@ -1,10 +1,12 @@
 import React from "react";
-import Board from "./Board";
-import Timer from "./Timer";
 import { Alert, Card } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
 import { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
+
+import Board from "./Board";
+import Timer from "./Timer";
+
 import "../styles.css";
 
 interface RouteParams {
@@ -26,7 +28,10 @@ const GAME_TIME = 300;
  */
 
 const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => {
-  const { socket,  match: { params }} = props;
+  const {
+    socket,
+    match: { params },
+  } = props;
   const { gameCode } = params;
   /**
    * State representing the piece which will play the current turn
@@ -66,10 +71,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
       move += moves[index] + " ";
       if (index + 1 < moves.length) move += moves[index + 1] + "\n";
       gameMoves.push(
-        <Card.Text
-          key={`moveLine_${index / 2}`}
-          className={(index / 2) % 2 ? "odd" : "even"}
-        >
+        <Card.Text key={`moveLine_${index / 2}`} className={(index / 2) % 2 ? "odd" : "even"}>
           {move}
         </Card.Text>
       );
@@ -106,37 +108,23 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
 
         <div className="game-data">
           <div className="score">
-            <Card
-              className="score-section"
-              border={currentTurn === "white" ? "none" : "dark"}
-            >
+            <Card className="score-section" border={currentTurn === "white" ? "none" : "dark"}>
               <Card.Header>
                 <Card.Title>Black</Card.Title>
               </Card.Header>
               <Card.Body>
                 <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
               </Card.Body>
-              <Timer
-                timePeriod={blackTimePeriod}
-                setTimePeriod={setBlackTimePeriod}
-                paused={currentTurn === "white"}
-              />
+              {/* <Timer timePeriod={blackTimePeriod} setTimePeriod={setBlackTimePeriod} paused={currentTurn === "white"} /> */}
             </Card>
-            <Card
-              className="score-section"
-              border={currentTurn === "white" ? "dark" : "none"}
-            >
+            <Card className="score-section" border={currentTurn === "white" ? "dark" : "none"}>
               <Card.Header>
                 <Card.Title>White</Card.Title>
               </Card.Header>
               <Card.Body>
                 <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
               </Card.Body>
-              <Timer
-                timePeriod={whiteTimePeriod}
-                setTimePeriod={setWhiteTimePeriod}
-                paused={currentTurn === "black"}
-              />
+              {/* <Timer timePeriod={whiteTimePeriod} setTimePeriod={setWhiteTimePeriod} paused={currentTurn === "black"} /> */}
             </Card>
           </div>
 

@@ -30,8 +30,9 @@ class Hints extends Moves {
     if (Utils.getPieceName(piece) !== null) {
       const validMoves = this.showValidMoves(piece);
       validMoves.forEach((index) => {
-        if (Utils.getPieceName(this.BoardConfig[index].piece) !== "king")
+        if (Utils.getPieceName(this.BoardConfig[index].piece) !== "king") {
           this.BoardConfig[index].setColor("selected");
+        }
       });
       return validMoves;
     } else {

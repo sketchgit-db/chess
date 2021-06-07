@@ -108,7 +108,7 @@ class Moves {
    * @returns {Array<number>} An array containing the valid Moves
    */
 
-   protected showValidMoves = (piece: PieceProps): Array<number> => {
+  protected showValidMoves = (piece: PieceProps): Array<number> => {
     const index = piece.position;
     const pieceName = Utils.getPieceName(piece);
     let validMoves: Array<number> = new Array<number>();
@@ -141,18 +141,17 @@ class Moves {
    * @returns {[boolean, number, number, Array<number>]} The position of the king in check (if any, else -1)
    */
 
-   public isCheck(piece: PieceProps): [boolean, number, number, Array<number>] {
+  public isCheck(piece: PieceProps): [boolean, number, number, Array<number>] {
     const attackerColor = Utils.getPieceColor(piece);
-    const targetPiece =
-      (attackerColor === "white" ? "black" : "white") + "-king";
+    const targetPiece = (attackerColor === "white" ? "black" : "white") + "-king";
     let possibleMoves = new Array<number>();
-    let oppKingPos = -1, selfKingPos = -1, found = false;
+    let oppKingPos = -1,
+      selfKingPos = -1,
+      found = false;
     for (let index = 0; index < 64; index++) {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
-      } else if (
-        Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor
-      ) {
+      } else if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
         if (Utils.getPieceName(this.BoardConfig[index].piece) === "king") {
           selfKingPos = index;
         }
@@ -297,11 +296,7 @@ class Moves {
     const dx = [2, 2, -2, -2, 1, 1, -1, -1];
     const dy = [1, -1, 1, -1, 2, -2, 2, -2];
     for (let index = 0; index < 8; index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x + dx[index],
-        y + dy[index],
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x + dx[index], y + dy[index], color);
       if (currMove) {
         moves.push(Utils.getIndex(x + dx[index], y + dy[index]));
       }
@@ -320,11 +315,7 @@ class Moves {
     const [x, y] = Utils.getCoordinates(piece.position);
     let moves = [piece.position];
     for (let index = 1; index < 8 - Math.max(x, y); index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x + index,
-        y + index,
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x + index, y + index, color);
       if (currMove) {
         moves.push(Utils.getIndex(x + index, y + index));
         if (nextMove === false) {
@@ -335,11 +326,7 @@ class Moves {
       }
     }
     for (let index = -1; index >= -Math.min(x, y); index--) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x + index,
-        y + index,
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x + index, y + index, color);
       if (currMove) {
         moves.push(Utils.getIndex(x + index, y + index));
         if (nextMove === false) {
@@ -350,11 +337,7 @@ class Moves {
       }
     }
     for (let index = 1; index <= Math.min(x, 7 - y); index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x - index,
-        y + index,
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x - index, y + index, color);
       if (currMove) {
         moves.push(Utils.getIndex(x - index, y + index));
         if (nextMove === false) {
@@ -365,11 +348,7 @@ class Moves {
       }
     }
     for (let index = -1; index >= -Math.min(7 - x, y); index--) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x - index,
-        y + index,
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x - index, y + index, color);
       if (currMove) {
         moves.push(Utils.getIndex(x - index, y + index));
         if (nextMove === false) {
@@ -413,33 +392,36 @@ class Moves {
   public isCastlePossible(fromPos: number, toPos: number): boolean {
     let isPossible = true;
     // rook should not have moved
-    isPossible &&= (this.BoardConfig[toPos].piece.numMoves === 0);
+    isPossible &&= this.BoardConfig[toPos].piece.numMoves === 0;
     if (isPossible === false) {
       return false;
     }
 
-    const L = Math.min(fromPos, toPos) + 1, R = Math.max(fromPos, toPos) - 1;
+    const L = Math.min(fromPos, toPos) + 1,
+      R = Math.max(fromPos, toPos) - 1;
     // all squares between are empty
     for (let index = L; index <= R; index++) {
-      isPossible &&= (Utils.getPieceName(this.BoardConfig[index].piece) === null);
+      isPossible &&= Utils.getPieceName(this.BoardConfig[index].piece) === null;
       if (isPossible === false) {
         return false;
       }
     }
 
     const kingColor = Utils.getPieceColor(this.BoardConfig[fromPos].piece);
-    const attackerColor = (kingColor === "white" ? "black" : "white");
+    const attackerColor = kingColor === "white" ? "black" : "white";
 
-    if (fromPos < toPos) { // kingSide
+    if (fromPos < toPos) {
+      // kingSide
       for (let index = fromPos; index <= fromPos + 2; index++) {
-        isPossible &&= (this.isSafe(index, attackerColor));
+        isPossible &&= this.isSafe(index, attackerColor);
         if (isPossible === false) {
           return false;
         }
       }
-    } else { // queenSide
+    } else {
+      // queenSide
       for (let index = fromPos; index >= fromPos - 2; index--) {
-        isPossible &&= (this.isSafe(index, attackerColor));
+        isPossible &&= this.isSafe(index, attackerColor);
         if (isPossible === false) {
           return false;
         }
@@ -465,7 +447,7 @@ class Moves {
 
       let kingSideCastleValid = true;
       // piece should be rook
-      kingSideCastleValid &&= (this.BoardConfig[kingSideCastlePos].piece.pieceName === (pieceColor + "-rook"));
+      kingSideCastleValid &&= this.BoardConfig[kingSideCastlePos].piece.pieceName === pieceColor + "-rook";
       kingSideCastleValid &&= this.isCastlePossible(kingPiece.position, kingSideCastlePos);
 
       if (kingSideCastleValid) {
@@ -474,7 +456,7 @@ class Moves {
 
       let queenSideCastleValid = true;
       // piece should be rook
-      queenSideCastleValid &&= (this.BoardConfig[queenSideCastlePos].piece.pieceName === (pieceColor + "-rook"));
+      queenSideCastleValid &&= this.BoardConfig[queenSideCastlePos].piece.pieceName === pieceColor + "-rook";
       queenSideCastleValid &&= this.isCastlePossible(kingPiece.position, queenSideCastlePos);
 
       if (queenSideCastleValid) {
@@ -498,11 +480,7 @@ class Moves {
     const dx = [1, 1, 1, -1, -1, -1, 0, 0];
     const dy = [0, 1, -1, 0, 1, -1, 1, -1];
     for (let index = 0; index < 8; index++) {
-      let [currMove, nextMove] = this.checkCoordinateValidity(
-        x + dx[index],
-        y + dy[index],
-        color
-      );
+      let [currMove, nextMove] = this.checkCoordinateValidity(x + dx[index], y + dy[index], color);
       if (currMove) {
         moves.push(Utils.getIndex(x + dx[index], y + dy[index]));
       }

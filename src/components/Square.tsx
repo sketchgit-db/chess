@@ -1,5 +1,7 @@
-import React, { MouseEventHandler } from "react";
+import React from "react";
+
 import { PieceProps } from "../core/Piece";
+
 import "../styles.css";
 
 export interface SquareProps {

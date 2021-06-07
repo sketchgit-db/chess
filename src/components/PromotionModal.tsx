@@ -1,10 +1,10 @@
-import React, { useEffect } from "react";
-import PieceDetails, { PieceDetailsProps } from "../core/PieceDetails";
-import Piece, { PieceProps } from "../core/Piece";
-
+import React from "react";
 import { Button, ButtonGroup, Modal } from "react-bootstrap";
 import { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
+
+import PieceDetails, { PieceDetailsProps } from "../core/PieceDetails";
+import Piece, { PieceProps } from "../core/Piece";
 
 import "../styles.css";
 
@@ -47,7 +47,7 @@ const PromotionModal: React.FC<PromotionModalProps> = (props) => {
 
   const pieceType: string = promotionType.split("-")[0] + "-piece";
 
-  const styles = (promotionType === "white-promotion" ? whiteButtonStyles : blackButtonStyles);
+  const styles = promotionType === "white-promotion" ? whiteButtonStyles : blackButtonStyles;
 
   /**
    * Get a new piece (often used to create an empty cell on capture)
@@ -65,19 +65,8 @@ const PromotionModal: React.FC<PromotionModalProps> = (props) => {
    * @returns {PieceProps} The required Piece
    */
 
-  const getNewPiece = (
-    data: PieceDetailsProps,
-    position: number
-  ): PieceProps => {
-    return new Piece(
-      pieceType,
-      data.pieceName,
-      data.label,
-      position,
-      data.value,
-      data.identifier,
-      0
-    );
+  const getNewPiece = (data: PieceDetailsProps, position: number): PieceProps => {
+    return new Piece(pieceType, data.pieceName, data.label, position, data.value, data.identifier, 0);
   };
 
   const pieces_white = [
@@ -117,28 +106,16 @@ const PromotionModal: React.FC<PromotionModalProps> = (props) => {
       </Modal.Header>
       <Modal.Body>
         <ButtonGroup style={{ display: "flex", justifyContent: "center" }}>
-          <Button
-            style={styles}
-            onClick={() => handleChoosePiece(0)}
-          >
+          <Button style={styles} onClick={() => handleChoosePiece(0)}>
             {pieces_white[0].label}
           </Button>
-          <Button
-            style={styles}
-            onClick={() => handleChoosePiece(1)}
-          >
+          <Button style={styles} onClick={() => handleChoosePiece(1)}>
             {pieces_white[1].label}
           </Button>
-          <Button
-            style={styles}
-            onClick={() => handleChoosePiece(2)}
-          >
+          <Button style={styles} onClick={() => handleChoosePiece(2)}>
             {pieces_white[2].label}
           </Button>
-          <Button
-            style={styles}
-            onClick={() => handleChoosePiece(3)}
-          >
+          <Button style={styles} onClick={() => handleChoosePiece(3)}>
             {pieces_white[3].label}
           </Button>
         </ButtonGroup>

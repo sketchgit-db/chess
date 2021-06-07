@@ -1,18 +1,12 @@
 import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
-import {
-  Card,
-  Button,
-  Modal,
-  InputGroup,
-  FormControl,
-  Alert,
-} from "react-bootstrap";
-import GenerateCode from "../utils/codeGenerator";
+import { Card, Button, Modal, InputGroup, FormControl, Alert } from "react-bootstrap";
 import { Socket } from "socket.io-client";
+import { DefaultEventsMap } from "socket.io-client/build/typed-events";
+
+import GenerateCode from "../utils/codeGenerator";
 
 import "../styles.css";
-import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 
 const GAME_CODE_LENGTH = 6;
 
@@ -121,20 +115,11 @@ const Home: React.FC<HomeProps> = (props) => {
    */
   return (
     <div className="home-container">
-      <Card
-        className="game-input"
-        border="secondary"
-      >
-        <Card.Header style={{ fontSize: "1.5em" }}>
-          Let's start playing
-        </Card.Header>
+      <Card className="game-input" border="secondary">
+        <Card.Header style={{ fontSize: "1.5em" }}>Let's start playing</Card.Header>
         <Card.Body>
           {/* Create New Game Button */}
-          <Button
-            variant="outline-success"
-            size="lg"
-            onClick={showCreateGameModal}
-          >
+          <Button variant="outline-success" size="lg" onClick={showCreateGameModal}>
             Create a new game
           </Button>
           {/* Modal associated with Create New Game */}
@@ -166,11 +151,7 @@ const Home: React.FC<HomeProps> = (props) => {
           <hr />
 
           {/* Join Existing Game Button */}
-          <Button
-            variant="outline-danger"
-            size="lg"
-            onClick={showJoinGameModal}
-          >
+          <Button variant="outline-danger" size="lg" onClick={showJoinGameModal}>
             Join an existing game
           </Button>
           {/* Modal associated with Join Existing Game */}
@@ -208,9 +189,7 @@ const Home: React.FC<HomeProps> = (props) => {
         </Card.Body>
       </Card>
       <Alert className="instructions" variant="info">
-        <Alert.Heading style={{ textAlign: "center"}}>
-          How to Play?
-        </Alert.Heading>
+        <Alert.Heading style={{ textAlign: "center" }}>How to Play?</Alert.Heading>
         <ol>
           <li>
             To start a new game, click <b>Create a new game</b>
@@ -226,7 +205,9 @@ const Home: React.FC<HomeProps> = (props) => {
             click <b>Join an existing game</b>
           </li>
           <ul>
-            <li>Enter the code and click <b>Start Game</b></li>
+            <li>
+              Enter the code and click <b>Start Game</b>
+            </li>
           </ul>
         </ol>
       </Alert>

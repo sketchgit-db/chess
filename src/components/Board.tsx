@@ -10,7 +10,7 @@ import File from "./File";
 import PromotionModal from "./PromotionModal";
 
 import PieceDetails from "../core/PieceDetails";
-import Piece, { PieceProps } from "../core/Piece";
+import { PieceProps } from "../core/Piece";
 import Hints from "../utils/Hints";
 import * as Utils from "../utils/helpers";
 
@@ -20,7 +20,7 @@ enum MoveTypes {
   MOVE = 0,
   CAPTURE = 1,
   CASTLE = 2,
-  PROMOTION = 3
+  PROMOTION = 3,
 }
 
 export interface BoardStatusProps {
@@ -40,7 +40,7 @@ export interface BoardProps {
   gameMoves: Array<string> /** State representing the moves in the game so far */;
   setGameMoves: any /** The callback to update the moves in the game */;
   /** The socket for the current player */
-  socket: Socket<DefaultEventsMap, DefaultEventsMap> ;
+  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
   gameCode: string /** The gameCode for the current Game */;
 }
 
@@ -62,7 +62,6 @@ const Board: React.FC<BoardProps> = (props) => {
    * The last clicked piece (used to perform moves and captures)
    */
   const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
-
   /**
    * States storing the color of pawn promoted and positions involving the promotion
    */
@@ -165,63 +164,27 @@ const Board: React.FC<BoardProps> = (props) => {
 
     // rnbqkbnr
     for (let index = 0; index < 8; index++) {
-      const _piece = new Piece(
-        "black-piece",
-        black_row[index].pieceName,
-        black_row[index].label,
-        index,
-        black_row[index].value,
-        black_row[index].identifier,
-        0
-      );
+      const _piece = Utils.getNewPiece("black-piece", black_row[index], index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
-
     // pppppppp
     for (let index = 8; index < 16; index++) {
-      const _piece = new Piece(
-        "black-piece",
-        PieceDetails.BLACK_PAWN.pieceName,
-        PieceDetails.BLACK_PAWN.label,
-        index,
-        PieceDetails.BLACK_PAWN.value,
-        PieceDetails.BLACK_PAWN.identifier,
-        0
-      );
+      const _piece = Utils.getNewPiece("black-piece", PieceDetails.BLACK_PAWN, index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
-
     // 8/8/8/8
     for (let index = 16; index < 48; index++) {
-      const _piece = new Piece("empty-cell", null, "", index, 0, "", 0);
+      const _piece = Utils.getEmptyCell(index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
-
     // PPPPPPPP
     for (let index = 48; index < 56; index++) {
-      const _piece = new Piece(
-        "white-piece",
-        PieceDetails.WHITE_PAWN.pieceName,
-        PieceDetails.WHITE_PAWN.label,
-        index,
-        PieceDetails.WHITE_PAWN.value,
-        PieceDetails.WHITE_PAWN.identifier,
-        0
-      );
+      const _piece = Utils.getNewPiece("white-piece", PieceDetails.WHITE_PAWN, index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
-
     // RNBQKBNR
     for (let index = 56; index < 64; index++) {
-      const _piece = new Piece(
-        "white-piece",
-        white_row[index % 8].pieceName,
-        white_row[index % 8].label,
-        index,
-        white_row[index % 8].value,
-        white_row[index % 8].identifier,
-        0
-      );
+      const _piece = Utils.getNewPiece("white-piece", white_row[index % 8], index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
 
@@ -239,11 +202,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("nextTurn", (data) => {
-      if (socket.id === data.socket) {
-        console.log("+++ moveSelf +++");
-      } else {
-        console.log("+++ moveOpponent +++");
-      }
+      console.log(socket.id === data.socket ? "+++ moveSelf +++" : "+++ moveOpponent +++");
       BoardConfig[data.fromPos].setPiece(data.fromPiece);
       BoardConfig[data.toPos].setPiece(data.toPiece);
 
@@ -259,15 +218,8 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("updateMoveTable", (data) => {
-      console.log("+++ updateMoveTable +++");
-      console.log(data);
-      getMoveRepresentation(
-        data.fromPiece,
-        data.toPiece,
-        data.moveType,
-        data.ischeck,
-        data.ischeckmate
-      );
+      console.log("+++ updateMoveTable +++", data);
+      getMoveRepresentation(data.fromPiece, data.toPiece, data.moveType, data.ischeck, data.ischeckmate);
     });
   }, [gameMoves]);
 
@@ -279,7 +231,6 @@ const Board: React.FC<BoardProps> = (props) => {
     socket.once("performCastling", (data) => {
       BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
       BoardConfig[data.newKingPos].setPiece(data.newKingPiece);
-
       BoardConfig[data.oldRookPos].setPiece(data.oldRookPiece);
       BoardConfig[data.newRookPos].setPiece(data.newRookPiece);
 
@@ -324,8 +275,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("gameComplete", (data) => {
-      console.log("+++ gameComplete +++");
-      console.log(data);
+      console.log("+++ gameComplete +++", data);
       setGameComplete(true);
       // @ts-ignore
       setWinningColor(Utils.getPieceColor(data.piece));
@@ -363,10 +313,7 @@ const Board: React.FC<BoardProps> = (props) => {
     isCheckMate: boolean
   ) => {
     const posTo = from.position;
-    const [x, y] = [
-      (8 - Math.floor(posTo / 8)).toString(),
-      String.fromCharCode(97 + (posTo % 8)),
-    ];
+    const [x, y] = [(8 - Math.floor(posTo / 8)).toString(), String.fromCharCode(97 + (posTo % 8))];
     let moveRep = "";
     if (moveType === 2) {
       moveRep = from.position > to.position ? "0-0" : "0-0-0";
@@ -381,7 +328,6 @@ const Board: React.FC<BoardProps> = (props) => {
     } else if (isCheck) {
       moveRep += "+";
     }
-    console.log("Move: ", moveType, moveRep);
     setGameMoves([...gameMoves, moveRep]);
   };
 
@@ -415,8 +361,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const isCheck = (piece: PieceProps): [boolean, boolean] => {
     const moves = new Hints(BoardConfig);
-    const [found, selfKingPos, oppKingPos, possibleMoves] =
-      moves.isCheck(piece);
+    const [found, selfKingPos, oppKingPos, possibleMoves] = moves.isCheck(piece);
     if (found) {
       socket.emit("setCheck", {
         gameCode: gameCode,
@@ -429,14 +374,20 @@ const Board: React.FC<BoardProps> = (props) => {
       socket.emit("unsetCheck", {
         gameCode: gameCode,
         position0: selfKingPos,
-        color0:
-          Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
+        color0: Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
         position1: oppKingPos,
         color1: Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white",
       });
       return [false, false];
     }
   };
+
+  /**
+   * Check if pawn promotion is possible
+   * @param {PieceProps} from The capturing piece
+   * @param {PieceProps} to The captured piece
+   * @returns {boolean} true if promotion possible, else false
+   */
 
   const checkPromotion = (from: PieceProps, to: PieceProps): boolean => {
     let possible: boolean = true;
@@ -446,8 +397,14 @@ const Board: React.FC<BoardProps> = (props) => {
     return possible;
   };
 
+  /**
+   * Performs a normal move
+   * @param {PieceProps} from The movinb piece
+   * @param {PieceProps} to The cell to move into
+   */
+
   const performMove = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
+    const [posFrom, posTo] = [from.position, to.position];
     console.log(`Making a move from ${posFrom} to ${posTo}`);
     to.position = posFrom;
     from.position = posTo;
@@ -461,7 +418,7 @@ const Board: React.FC<BoardProps> = (props) => {
       gameCode: gameCode,
       points: 0,
     });
-  }
+  };
 
   /**
    * Performs the capture move
@@ -470,7 +427,7 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const performCapture = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
+    const [posFrom, posTo] = [from.position, to.position];
     console.log(`Making a capture from ${posFrom} to ${posTo}`);
     const emptyCell = Utils.getEmptyCell(posFrom);
     from.position = posTo;
@@ -507,10 +464,10 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const performCastling = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position, posTo = to.position;
+    const [posFrom, posTo] = [from.position, to.position];
     const emptyCell0 = Utils.getEmptyCell(posFrom);
     const emptyCell1 = Utils.getEmptyCell(posTo);
-    let newKingPos = posFrom, newRookPos = posTo;
+    let [newKingPos, newRookPos] = [posFrom, posTo];
     if (posFrom < posTo) {
       // kingSide
       newKingPos += 2;
@@ -570,10 +527,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const checkPossibleMove = (piece: PieceProps): boolean => {
     const index = piece.position;
-    return (
-      piece.position !== clickedPiece.position &&
-      BoardConfig[index].color === "selected"
-    );
+    return piece.position !== clickedPiece.position && BoardConfig[index].color === "selected";
   };
 
   /**
@@ -585,7 +539,7 @@ const Board: React.FC<BoardProps> = (props) => {
   const squareOnClickHandler = (piece: PieceProps) => {
     const moves = new Hints(BoardConfig);
     if (checkPossibleMove(piece)) {
-      const fromPiece = clickedPiece, toPiece = piece;
+      const [fromPiece, toPiece] = [clickedPiece, piece];
       const moveType = makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
       const [ischeck, ischeckmate] = isCheck(clickedPiece);

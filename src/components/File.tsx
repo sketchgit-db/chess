@@ -25,9 +25,7 @@ const File: React.FC<FileProps> = (props) => {
     return files;
   };
 
-  return (
-    <div className="file-list">{getFiles(side)}</div>
-  )
+  return <div className="file-list">{getFiles(side)}</div>;
 };
 
 export default File;

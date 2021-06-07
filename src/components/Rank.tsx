@@ -25,9 +25,7 @@ const Rank: React.FC<RankProps> = (props) => {
     return ranks;
   };
 
-  return (
-    <div className="rank-list">{getRanks(side)}</div>
-  )
+  return <div className="rank-list">{getRanks(side)}</div>;
 };
 
 export default Rank;

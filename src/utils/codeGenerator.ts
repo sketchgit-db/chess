@@ -10,7 +10,7 @@ const GenerateCode = (length: number): string => {
   for (let i = 0; i < length; i++) {
     result.push(chars[Math.floor(Math.random() * chars.length)]);
   }
-  return result.join('');
-}
+  return result.join("");
+};
 
 export default GenerateCode;
