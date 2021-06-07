@@ -4,6 +4,10 @@ _Currently in Development_
 
 A `TypeScript` and `WebSockets` based implementation of the game of chess
 
+## Access on the web
+
+Open [the-chess-game.herokuapp.com](https://the-chess-game.herokuapp.com/) in a browser and invite your friend to play
+
 ## Build and Run locally
 
 * ### Requirements
@@ -17,9 +21,7 @@ A `TypeScript` and `WebSockets` based implementation of the game of chess
 
 * ### Build and run
     ```sh
-      npm run start-server
+      npm run start-express-server
     ```
 
     Open [localhost:4000](http://localhost:4000/) in two Browser Windows and play with a piece in each
-
-    This way of accessing the game is cumbersome, and steps to deploy it to a public hosting platform are being taken
