@@ -1,14 +1,27 @@
 import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { Button, Modal } from "react-bootstrap";
-import Square from "./Square";
-import PromotionModal from "./PromotionModal";
-import PieceDetails, { PieceDetailsProps } from "../core/PieceDetails";
-import Piece, { PieceProps } from "../core/Piece";
-import Hints from "../utils/Hints";
-import "../styles.css";
 import { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
+
+import Square from "./Square";
+import Rank from "./Rank";
+import File from "./File";
+import PromotionModal from "./PromotionModal";
+
+import PieceDetails from "../core/PieceDetails";
+import Piece, { PieceProps } from "../core/Piece";
+import Hints from "../utils/Hints";
+import * as Utils from "../utils/helpers";
+
+import "../styles.css";
+
+enum MoveTypes {
+  MOVE = 0,
+  CAPTURE = 1,
+  CASTLE = 2,
+  PROMOTION = 3
+}
 
 export interface BoardStatusProps {
   piece: PieceProps /** The piece under consideration */;
@@ -26,7 +39,8 @@ export interface BoardProps {
   setBlackPoints: any /** The callback to update the above `blackPoints` */;
   gameMoves: Array<string> /** State representing the moves in the game so far */;
   setGameMoves: any /** The callback to update the moves in the game */;
-  socket: Socket<DefaultEventsMap,DefaultEventsMap> /** The socket for the current player */;
+  /** The socket for the current player */
+  socket: Socket<DefaultEventsMap, DefaultEventsMap> ;
   gameCode: string /** The gameCode for the current Game */;
 }
 
@@ -39,38 +53,20 @@ export interface BoardProps {
 
 const Board: React.FC<BoardProps> = (props) => {
   const history = useHistory();
-  /**
-   * A dummy Piece representing an empty cell for capture moves
-   */
-  const dummyPiece: PieceProps = new Piece("empty-cell", null, "", -1, 0, "", 0);
-
-  /**
-   * State storing whether the game is in progress or has completed
-   */
+  const dummyPiece: PieceProps = Utils.getEmptyCell(-1);
   const [gameComplete, setGameComplete] = React.useState(false);
-
-  /**
-   * State storing the color of the winning side
-   */
   const [winningColor, setWinningColor] = React.useState("");
-
-  /**
-   * The color played by the player on socket `socket`
-   */
   const [playerColor, setPlayerColor] = React.useState("");
-
-  // /**
-  //  * State storing the piece a pawn is promoted into
-  //  */
-  // const [promotionPiece, setPromotionPiece] = React.useState<PieceDetailsProps>(
-  //   { pieceName: "", label: "", value: 0, identifier: "" }
-  // );
+  const [hintCells, updateHintCells] = React.useState(Array<number>());
+  /**
+   * The last clicked piece (used to perform moves and captures)
+   */
+  const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
 
   /**
-   * State storing the color of pawn promoted
+   * States storing the color of pawn promoted and positions involving the promotion
    */
   const [pawnPromotionType, setPawnPromotionType] = React.useState("");
-
   const [promotionPos, setPromotionPos] = React.useState([-1, -1]);
 
   /**
@@ -88,16 +84,6 @@ const Board: React.FC<BoardProps> = (props) => {
     socket,
     gameCode,
   } = props;
-
-  /**
-   * Get a new piece (often used to create an empty cell on capture)
-   * @param {number} position
-   * @returns {PieceProps} The required Piece
-   */
-
-  const getEmptyCell = (position: number): PieceProps => {
-    return new Piece("empty-cell", null, "", position, 0, "", 0);
-  };
 
   /**
    * Set the piece color used by the player on socket `socket`
@@ -246,14 +232,6 @@ const Board: React.FC<BoardProps> = (props) => {
    * The Board's state at an instance
    */
   const BoardConfig = initBoardColors();
-  /**
-   * The list of hint cells found for a given Piece
-   */
-  const [hintCells, updateHintCells] = React.useState(Array<number>());
-  /**
-   * The last clicked piece (used to perform moves and captures)
-   */
-  const [clickedPiece, updateClickedPiece] = React.useState(dummyPiece);
 
   /**
    * Sync game status across both players
@@ -268,6 +246,7 @@ const Board: React.FC<BoardProps> = (props) => {
       }
       BoardConfig[data.fromPos].setPiece(data.fromPiece);
       BoardConfig[data.toPos].setPiece(data.toPiece);
+
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
       updateScores(data.toPiece, data.points);
@@ -290,7 +269,11 @@ const Board: React.FC<BoardProps> = (props) => {
         data.ischeckmate
       );
     });
-  }, [currentTurn]);
+  }, [gameMoves]);
+
+  /**
+   * Perform castling
+   */
 
   useEffect(() => {
     socket.once("performCastling", (data) => {
@@ -305,16 +288,23 @@ const Board: React.FC<BoardProps> = (props) => {
     });
   }, [currentTurn]);
 
+  /**
+   * Perform Pawn Promotion
+   */
+
   useEffect(() => {
     socket.once("performPromotion", (data) => {
       BoardConfig[data.oldPiecePos].setPiece(data.oldPiece);
       BoardConfig[data.newPiecePos].setPiece(data.newPiece);
+
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
       updateClickedPiece(dummyPiece);
-      setPawnPromotionType("");
     });
   }, [currentTurn]);
 
+  /**
+   * Mark and unmark king in check
+   */
   useEffect(() => {
     socket.once("markCheck", (data) => {
       BoardConfig[data.position].setColor(data.color);
@@ -338,7 +328,7 @@ const Board: React.FC<BoardProps> = (props) => {
       console.log(data);
       setGameComplete(true);
       // @ts-ignore
-      setWinningColor(data.piece.pieceName?.split("-")[0]);
+      setWinningColor(Utils.getPieceColor(data.piece));
     });
   }, []);
 
@@ -349,7 +339,7 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const updateScores = (from: PieceProps, value: number) => {
-    if (from.pieceName?.split("-")[0] === "white") {
+    if (Utils.getPieceColor(from) === "white") {
       setWhitePoints(whitePoints + value);
     } else {
       setBlackPoints(blackPoints + value);
@@ -363,7 +353,6 @@ const Board: React.FC<BoardProps> = (props) => {
    * @param {number} moveType 0 - Normal move, 1 - capture, 2 - castling
    * @param {boolean} isCheck Whether the opponent king was given a check
    * @param {boolean} isCheckMate Whether the opponent king was checkmate
-   * @returns {string} The algebraic notation of the move
    */
 
   const getMoveRepresentation = (
@@ -380,7 +369,7 @@ const Board: React.FC<BoardProps> = (props) => {
     ];
     let moveRep = "";
     if (moveType === 2) {
-      moveRep = (from.position > to.position) ? "0-0" : "0-0-0";
+      moveRep = from.position > to.position ? "0-0" : "0-0-0";
     } else {
       moveRep = from.identifier + (moveType === 1 ? "x" : "") + y + x;
       if (moveType === 3) {
@@ -397,16 +386,15 @@ const Board: React.FC<BoardProps> = (props) => {
   };
 
   /**
-   * TODO
    * Checks if the opponent king to the attacking `piece` is in checkMate
    * @param {PieceProps} piece The latest piece which caused check
    * @param {number} kingPos The position of the opponent king
    * @returns {boolean} true if the opponent king has been checkmated, false otherwise
    */
 
-  const isCheckMate = (piece: PieceProps, kingPos: number, possibleMoves: Array<number>) => {
+  const isCheckMate = (piece: PieceProps, pos: number, possibleMoves: Array<number>) => {
     const moves = new Hints(BoardConfig);
-    const validMoves = moves.getKingMoves(BoardConfig[kingPos].piece);
+    const validMoves = moves.getKingMoves(BoardConfig[pos].piece);
     const checkMate = validMoves.every((val) => possibleMoves.includes(val));
     if (checkMate) {
       socket.emit("checkmate", {
@@ -452,10 +440,27 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const checkPromotion = (from: PieceProps, to: PieceProps): boolean => {
     let possible: boolean = true;
-    possible &&= (from.pieceName?.split("-")[1] === "pawn");
+    possible &&= Utils.getPieceName(from) === "pawn";
     let rank = Math.floor(to.position / 8);
-    possible &&= (rank == 0 || rank == 7);
+    possible &&= rank == 0 || rank == 7;
     return possible;
+  };
+
+  const performMove = (from: PieceProps, to: PieceProps) => {
+    const posFrom = from.position, posTo = to.position;
+    console.log(`Making a move from ${posFrom} to ${posTo}`);
+    to.position = posFrom;
+    from.position = posTo;
+    from.numMoves += 1;
+
+    socket.emit("perform-move", {
+      fromPos: posFrom,
+      fromPiece: to,
+      toPos: posTo,
+      toPiece: from,
+      gameCode: gameCode,
+      points: 0,
+    });
   }
 
   /**
@@ -464,12 +469,10 @@ const Board: React.FC<BoardProps> = (props) => {
    * @param {PieceProps} to The captured piece
    */
 
-  const capture = (from: PieceProps, to: PieceProps) => {
-    // console.log("checkPromotion: ", checkPromotion(from, to));
-    const posFrom = from.position,
-    posTo = to.position;
+  const performCapture = (from: PieceProps, to: PieceProps) => {
+    const posFrom = from.position, posTo = to.position;
     console.log(`Making a capture from ${posFrom} to ${posTo}`);
-    const emptyCell = getEmptyCell(posFrom);
+    const emptyCell = Utils.getEmptyCell(posFrom);
     from.position = posTo;
     to.position = posFrom;
     from.numMoves += 1;
@@ -492,7 +495,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const performPromotion = (from: PieceProps, to: PieceProps) => {
     const newPos = [from.position, to.position];
-    const color = from.type.split("-")[0];
+    const color = Utils.getPieceColor(from);
     setPromotionPos([...newPos]);
     setPawnPromotionType(color + "-promotion");
   };
@@ -504,12 +507,10 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const performCastling = (from: PieceProps, to: PieceProps) => {
-    const posFrom = from.position,
-      posTo = to.position;
-    const emptyCell0 = getEmptyCell(posFrom);
-    const emptyCell1 = getEmptyCell(posTo);
-    let newKingPos = posFrom,
-      newRookPos = posTo;
+    const posFrom = from.position, posTo = to.position;
+    const emptyCell0 = Utils.getEmptyCell(posFrom);
+    const emptyCell1 = Utils.getEmptyCell(posTo);
+    let newKingPos = posFrom, newRookPos = posTo;
     if (posFrom < posTo) {
       // kingSide
       newKingPos += 2;
@@ -523,6 +524,7 @@ const Board: React.FC<BoardProps> = (props) => {
     from.numMoves += 1;
     to.position = newRookPos;
     to.numMoves += 1;
+
     socket.emit("castle", {
       oldKingPiece: emptyCell0,
       newKingPiece: from,
@@ -544,32 +546,18 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const makeMove = (from: PieceProps, to: PieceProps): number => {
-    if (to.pieceName === null) {
-      const posFrom = from.position,
-        posTo = to.position;
-      console.log(`Making a move from ${posFrom} to ${posTo}`);
-      to.position = posFrom;
-      from.position = posTo;
-      from.numMoves += 1;
-
-      socket.emit("perform-move", {
-        fromPos: posFrom,
-        fromPiece: to,
-        toPos: posTo,
-        toPiece: from,
-        gameCode: gameCode,
-        points: 0,
-      });
-      return 0;
-    } else if (to.type.split("-")[0] === from.type.split("-")[0]) {
-      performCastling(from, to);
-      return 2;
-    } else if (checkPromotion(from, to)) {
+    if (checkPromotion(from, to)) {
       performPromotion(from, to);
-      return 3;
+      return MoveTypes.PROMOTION;
+    } else if (to.pieceName === null) {
+      performMove(from, to);
+      return MoveTypes.MOVE;
+    } else if (Utils.getPieceColor(to) === Utils.getPieceColor(from)) {
+      performCastling(from, to);
+      return MoveTypes.CASTLE;
     } else {
-      capture(from, to);
-      return 1;
+      performCapture(from, to);
+      return MoveTypes.CAPTURE;
     }
   };
 
@@ -597,15 +585,11 @@ const Board: React.FC<BoardProps> = (props) => {
   const squareOnClickHandler = (piece: PieceProps) => {
     const moves = new Hints(BoardConfig);
     if (checkPossibleMove(piece)) {
-      // make a move (or capture)
-      const fromPiece = clickedPiece,
-        toPiece = piece;
+      const fromPiece = clickedPiece, toPiece = piece;
       const moveType = makeMove(clickedPiece, piece);
-      console.log("moveType", moveType);
       moves.hideHints(hintCells);
-      // check if the move caused a check to the opponent
       const [ischeck, ischeckmate] = isCheck(clickedPiece);
-      // get the move representation
+
       socket.emit("getMoveRepresentation", {
         fromPiece: fromPiece,
         toPiece: toPiece,
@@ -615,7 +599,7 @@ const Board: React.FC<BoardProps> = (props) => {
         gameCode: gameCode,
       });
     } else {
-      const color = piece.pieceName?.split("-")[0];
+      const color = Utils.getPieceColor(piece);
       if (color === currentTurn && color == playerColor) {
         updateClickedPiece(piece);
         moves.hideHints(hintCells);
@@ -647,55 +631,19 @@ const Board: React.FC<BoardProps> = (props) => {
   };
 
   /**
-   * Get the rank labels for the chess board
-   * @param {number} side Rank direction (left or right)
-   * @returns {Array<React.ReactElement>} Array of Rank divs
-   */
-
-  const getRanks = (side: number) => {
-    const ranks = [];
-    for (let index = 8; index >= 1; index--) {
-      ranks.push(
-        <div className="ranks" key={`rank${side}_${index}`}>
-          {index}
-        </div>
-      );
-    }
-    return ranks;
-  };
-
-  /**
-   * Get the file labels for the chess board
-   * @param {number} side File direction (top or bottom)
-   * @returns {Array<React.ReactElement>} Array of File divs
-   */
-
-  const getFiles = (side: number) => {
-    const files = [];
-    for (let index = 97; index <= 104; index++) {
-      files.push(
-        <div className="files" key={`file${side}_${index - 97}`}>
-          {String.fromCharCode(index)}
-        </div>
-      );
-    }
-    return files;
-  };
-
-  /**
    * Returns the Board component
    * @returns {React.ReactElement} The Board React Component
    */
 
   return (
     <div className="outline-1">
-      <div className="file-list">{getFiles(0)}</div>
+      <File side={0} />
       <div className="outline-2">
-        <div className="rank-list">{getRanks(0)}</div>
+        <Rank side={0} />
         <div className="board">{renderSquares()}</div>
-        <div className="rank-list">{getRanks(1)}</div>
+        <Rank side={1} />
       </div>
-      <div className="file-list">{getFiles(1)}</div>
+      <File side={1} />
       <Modal show={gameComplete}>
         <Modal.Header>
           <Modal.Title>Game Over !</Modal.Title>
@@ -714,8 +662,9 @@ const Board: React.FC<BoardProps> = (props) => {
       </Modal>
       <PromotionModal
         show={pawnPromotionType !== ""}
+        setShow={setPawnPromotionType}
         socket={socket}
-        promotionType={pawnPromotionType} 
+        promotionType={pawnPromotionType}
         fromPos={promotionPos[0]}
         toPos={promotionPos[1]}
         gameCode={gameCode}

@@ -1,6 +1,7 @@
 import { PieceProps } from "../core/Piece";
 import { BoardStatusProps } from "../components/Board";
 import Moves from "../core/Moves";
+import * as Utils from "./helpers";
 
 /**
  * Class representing the valid movements on UI for a given piece at a given board configuration
@@ -26,10 +27,10 @@ class Hints extends Moves {
    */
 
   public showHints = (piece: PieceProps): Array<number> => {
-    if (this.getPieceType(piece) !== null) {
+    if (Utils.getPieceName(piece) !== null) {
       const validMoves = this.showValidMoves(piece);
       validMoves.forEach((index) => {
-        if (this.getPieceType(this.BoardConfig[index].piece) !== "king")
+        if (Utils.getPieceName(this.BoardConfig[index].piece) !== "king")
           this.BoardConfig[index].setColor("selected");
       });
       return validMoves;
