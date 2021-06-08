@@ -29,7 +29,6 @@ const Square: React.FC<SquareProps> = (props) => {
    * Shows the possible moves for the current square cell's piece
    */
   const showMoves = () => {
-    props.onClick(piece);
     if (piece.pieceName !== null) {
       console.log(
         `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
@@ -37,6 +36,7 @@ const Square: React.FC<SquareProps> = (props) => {
         }`
       );
     }
+    props.onClick(piece);
   };
 
   /**

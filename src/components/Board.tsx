@@ -25,20 +25,23 @@ enum MoveTypes {
 
 export interface BoardStatusProps {
   piece: PieceProps /** The piece under consideration */;
-  setPiece: any /** The callback to update the above `piece` */;
+  setPiece: React.Dispatch<React.SetStateAction<PieceProps>> /** The callback to update the above `piece` */;
   color: string /** The color of the board cell under consideration */;
-  setColor: any /** The callback to update the above `color` */;
+  setColor: React.Dispatch<React.SetStateAction<string>> /** The callback to update the above `color` */;
 }
 
 export interface BoardProps {
   currentTurn: string /** State representing the current turn, 'white' or 'black' */;
-  setCurrentTurn: any /** The callback to update the above `currentTurn` */;
+  setCurrentTurn: React.Dispatch<React.SetStateAction<string>>;
+  /** The callback to update the above `currentTurn` */
   whitePoints: number /** State representing the points scored by the player with white pieces */;
-  setWhitePoints: any /** The callback to update the above `whitePoints` */;
+  setWhitePoints: React.Dispatch<React.SetStateAction<number>>;
+  /** The callback to update the above `whitePoints` */
   blackPoints: number /** State representing the points scored by the player with black pieces */;
-  setBlackPoints: any /** The callback to update the above `blackPoints` */;
+  setBlackPoints: React.Dispatch<React.SetStateAction<number>>;
+  /** The callback to update the above `blackPoints` */
   gameMoves: Array<string> /** State representing the moves in the game so far */;
-  setGameMoves: any /** The callback to update the moves in the game */;
+  setGameMoves: React.Dispatch<React.SetStateAction<string[]>> /** The callback to update the moves in the game */;
   /** The socket for the current player */
   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
   gameCode: string /** The gameCode for the current Game */;
@@ -197,60 +200,101 @@ const Board: React.FC<BoardProps> = (props) => {
   const BoardConfig = initBoardColors();
 
   /**
-   * Sync game status across both players
-   */
-
-  useEffect(() => {
-    socket.once("nextTurn", (data) => {
-      console.log(socket.id === data.socket ? "+++ moveSelf +++" : "+++ moveOpponent +++");
-      BoardConfig[data.fromPos].setPiece(data.fromPiece);
-      BoardConfig[data.toPos].setPiece(data.toPiece);
-
-      setCurrentTurn(currentTurn === "white" ? "black" : "white");
-      updateClickedPiece(dummyPiece);
-      updateScores(data.toPiece, data.points);
-    });
-  }, [currentTurn]);
-
-  /**
-   * Update moves for both players
+   * Update moves table for both players
    */
 
   useEffect(() => {
     socket.once("updateMoveTable", (data) => {
       console.log("+++ updateMoveTable +++", data);
-      getMoveRepresentation(data.fromPiece, data.toPiece, data.moveType, data.ischeck, data.ischeckmate);
+      setGameMoves((gameMoves) => [...gameMoves, data.move]);
     });
   }, [gameMoves]);
 
   /**
-   * Perform castling
+   * Peform the latest move (normal or capture) for both players
+   */
+
+  useEffect(() => {
+    socket.once("nextTurn", (data) => {
+      console.log(socket.id === data.socket ? "+++ moveSelf +++" : "+++ moveOpponent +++");
+      const [from, to, moveType, sockId] = [data.fromPiece, data.toPiece, data.moveType, data.socket];
+      if (BoardConfig[data.fromPos].piece !== data.fromPiece) {
+        BoardConfig[data.fromPos].setPiece(data.fromPiece);
+      }
+      if (BoardConfig[data.toPos].piece !== data.toPiece) {
+        BoardConfig[data.toPos].setPiece(data.toPiece);
+      }
+      if (clickedPiece !== dummyPiece) {
+        updateClickedPiece(dummyPiece);
+      }
+      if (sockId === socket.id && from.position !== -1 && to.position !== -1) {
+        getCheckStatus(from, to, moveType);
+      }
+      setCurrentTurn(currentTurn === "white" ? "black" : "white");
+      updateScores(data.toPiece, data.points);
+    });
+    return () => {
+      socket.off("nextTurn");
+    };
+  }, [currentTurn]);
+
+  /**
+   * Perform the special move castling for both players
    */
 
   useEffect(() => {
     socket.once("performCastling", (data) => {
-      BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
-      BoardConfig[data.newKingPos].setPiece(data.newKingPiece);
-      BoardConfig[data.oldRookPos].setPiece(data.oldRookPiece);
-      BoardConfig[data.newRookPos].setPiece(data.newRookPiece);
-
+      console.log("+++ performCastling +++", data);
+      const [from, to, sockId] = [data.newRookPiece, data.newKingPiece, data.socket];
+      if (BoardConfig[data.oldKingPos].piece !== data.oldKingPiece) {
+        BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
+      }
+      if (BoardConfig[data.newKingPos].piece !== data.newKingPiece) {
+        BoardConfig[data.newKingPos].setPiece(data.newKingPiece);
+      }
+      if (BoardConfig[data.oldRookPos].piece !== data.oldRookPiece) {
+        BoardConfig[data.oldRookPos].setPiece(data.oldRookPiece);
+      }
+      if (BoardConfig[data.newRookPos].piece !== data.newRookPiece) {
+        BoardConfig[data.newRookPos].setPiece(data.newRookPiece);
+      }
+      if (clickedPiece !== dummyPiece) {
+        updateClickedPiece(dummyPiece);
+      }
+      if (sockId === socket.id && from.position !== -1 && to.position !== -1) {
+        getCheckStatus(from, to, MoveTypes.CASTLE);
+      }
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
-      updateClickedPiece(dummyPiece);
     });
+    return () => {
+      socket.off("performCastling");
+    };
   }, [currentTurn]);
 
   /**
-   * Perform Pawn Promotion
+   * Perform the special move Pawn Promotion for both players
    */
 
   useEffect(() => {
     socket.once("performPromotion", (data) => {
-      BoardConfig[data.oldPiecePos].setPiece(data.oldPiece);
-      BoardConfig[data.newPiecePos].setPiece(data.newPiece);
-
+      const [from, to, sockId] = [data.oldPiece, data.newPiece, data.socket];
+      if (BoardConfig[data.oldPiecePos].piece !== data.oldPiece) {
+        BoardConfig[data.oldPiecePos].setPiece(data.oldPiece);
+      }
+      if (BoardConfig[data.newPiecePos].piece !== data.newPiece) {
+        BoardConfig[data.newPiecePos].setPiece(data.newPiece);
+      }
+      if (clickedPiece !== dummyPiece) {
+        updateClickedPiece(dummyPiece);
+      }
+      if (sockId === socket.id && from.position !== -1 && to.position !== -1) {
+        getCheckStatus(from, to, MoveTypes.PROMOTION);
+      }
       setCurrentTurn(currentTurn === "white" ? "black" : "white");
-      updateClickedPiece(dummyPiece);
     });
+    return () => {
+      socket.off("performPromotion");
+    };
   }, [currentTurn]);
 
   /**
@@ -312,15 +356,16 @@ const Board: React.FC<BoardProps> = (props) => {
     isCheck: boolean,
     isCheckMate: boolean
   ) => {
-    const posTo = from.position;
+    const posTo = to.position;
     const [x, y] = [(8 - Math.floor(posTo / 8)).toString(), String.fromCharCode(97 + (posTo % 8))];
     let moveRep = "";
     if (moveType === 2) {
-      moveRep = from.position > to.position ? "0-0" : "0-0-0";
+      moveRep = from.position < to.position ? "0-0" : "0-0-0";
     } else {
-      moveRep = from.identifier + (moveType === 1 ? "x" : "") + y + x;
       if (moveType === 3) {
-        moveRep += "=" + to.identifier;
+        moveRep = y + x + "=" + to.identifier;
+      } else {
+        moveRep = to.identifier + (moveType === 1 ? "x" : "") + y + x;
       }
     }
     if (isCheckMate) {
@@ -328,7 +373,8 @@ const Board: React.FC<BoardProps> = (props) => {
     } else if (isCheck) {
       moveRep += "+";
     }
-    setGameMoves([...gameMoves, moveRep]);
+    // setGameMoves([...gameMoves, moveRep]);
+    return moveRep;
   };
 
   /**
@@ -417,6 +463,7 @@ const Board: React.FC<BoardProps> = (props) => {
       toPiece: from,
       gameCode: gameCode,
       points: 0,
+      moveType: MoveTypes.MOVE,
     });
   };
 
@@ -441,6 +488,7 @@ const Board: React.FC<BoardProps> = (props) => {
       toPiece: from,
       gameCode: gameCode,
       points: to.value,
+      moveType: MoveTypes.CAPTURE,
     });
   };
 
@@ -530,6 +578,16 @@ const Board: React.FC<BoardProps> = (props) => {
     return piece.position !== clickedPiece.position && BoardConfig[index].color === "selected";
   };
 
+  const getCheckStatus = (fromPiece: PieceProps, toPiece: PieceProps, moveType: number) => {
+    console.log("Check Status", fromPiece, toPiece, moveType);
+    const [ischeck, ischeckmate] = isCheck(toPiece);
+    const lastMove = getMoveRepresentation(fromPiece, toPiece, moveType, ischeck, ischeckmate);
+    socket.emit("getMoveRepresentation", {
+      move: lastMove,
+      gameCode: gameCode,
+    });
+  };
+
   /**
    * onClick Handler for a given piece click
    * Checks if a move is possible and performs if a source and destination cell exists
@@ -539,19 +597,8 @@ const Board: React.FC<BoardProps> = (props) => {
   const squareOnClickHandler = (piece: PieceProps) => {
     const moves = new Hints(BoardConfig);
     if (checkPossibleMove(piece)) {
-      const [fromPiece, toPiece] = [clickedPiece, piece];
       const moveType = makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
-      const [ischeck, ischeckmate] = isCheck(clickedPiece);
-
-      socket.emit("getMoveRepresentation", {
-        fromPiece: fromPiece,
-        toPiece: toPiece,
-        moveType: moveType,
-        ischeck: ischeck,
-        ischeckmate: ischeckmate,
-        gameCode: gameCode,
-      });
     } else {
       const color = Utils.getPieceColor(piece);
       if (color === currentTurn && color == playerColor) {

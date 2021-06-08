@@ -145,9 +145,7 @@ class Moves {
     const attackerColor = Utils.getPieceColor(piece);
     const targetPiece = (attackerColor === "white" ? "black" : "white") + "-king";
     let possibleMoves = new Array<number>();
-    let oppKingPos = -1,
-      selfKingPos = -1,
-      found = false;
+    let [oppKingPos, selfKingPos, found] = [-1, -1, false];
     for (let index = 0; index < 64; index++) {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
@@ -179,7 +177,7 @@ class Moves {
   public getPawnMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
-    let moves = [piece.position];
+    let moves = [];
     if (color === "white") {
       // Pawn free movement
       let [currMove, nextMove] = this.checkPawnMoveValidity(x - 1, y, color);
@@ -235,7 +233,7 @@ class Moves {
   public getRookMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
-    let moves = [piece.position];
+    let moves = [];
     for (let dx = 1; dx < 8 - x; dx++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + dx, y, color);
       if (currMove) {
@@ -292,7 +290,7 @@ class Moves {
   public getKnightMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
-    let moves = [piece.position];
+    let moves = [];
     const dx = [2, 2, -2, -2, 1, 1, -1, -1];
     const dy = [1, -1, 1, -1, 2, -2, 2, -2];
     for (let index = 0; index < 8; index++) {
@@ -313,7 +311,7 @@ class Moves {
   public getBishopMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
-    let moves = [piece.position];
+    let moves = [];
     for (let index = 1; index < 8 - Math.max(x, y); index++) {
       let [currMove, nextMove] = this.checkCoordinateValidity(x + index, y + index, color);
       if (currMove) {
@@ -476,7 +474,7 @@ class Moves {
   public getKingMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
-    let moves = [piece.position];
+    let moves = [];
     const dx = [1, 1, 1, -1, -1, -1, 0, 0];
     const dy = [0, 1, -1, 0, 1, -1, 1, -1];
     for (let index = 0; index < 8; index++) {
