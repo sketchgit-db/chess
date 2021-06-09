@@ -23,6 +23,19 @@ enum MoveTypes {
   PROMOTION = 3,
 }
 
+export enum GameResultTypes {
+  WHITE = "White Won",
+  BLACK = "Black Won",
+  DRAW = "Game Drawn",
+}
+
+type GameResultTypesKeys = keyof typeof GameResultTypes;
+
+export interface Result {
+  outcome: string;
+  message: string;
+}
+
 export interface BoardStatusProps {
   piece: PieceProps /** The piece under consideration */;
   setPiece: React.Dispatch<React.SetStateAction<PieceProps>> /** The callback to update the above `piece` */;
@@ -45,6 +58,7 @@ export interface BoardProps {
   /** The socket for the current player */
   socket: Socket<DefaultEventsMap, DefaultEventsMap>;
   gameCode: string /** The gameCode for the current Game */;
+  playerColor: string /** The piece color current player is playing on */
 }
 
 /**
@@ -58,8 +72,8 @@ const Board: React.FC<BoardProps> = (props) => {
   const history = useHistory();
   const dummyPiece: PieceProps = Utils.getEmptyCell(-1);
   const [gameComplete, setGameComplete] = React.useState(false);
-  const [winningColor, setWinningColor] = React.useState("");
-  const [playerColor, setPlayerColor] = React.useState("");
+  const [gameResult, setGameResult] = React.useState("");
+  // const [playerColor, setPlayerColor] = React.useState("");
   const [hintCells, updateHintCells] = React.useState(Array<number>());
   /**
    * The last clicked piece (used to perform moves and captures)
@@ -85,26 +99,8 @@ const Board: React.FC<BoardProps> = (props) => {
     setGameMoves,
     socket,
     gameCode,
+    playerColor
   } = props;
-
-  /**
-   * Set the piece color used by the player on socket `socket`
-   */
-
-  useEffect(() => {
-    socket.emit("getColor", {
-      id: socket.id,
-      gameCode: gameCode,
-    });
-  }, []);
-
-  useEffect(() => {
-    socket.on("setPlayerColor", (data) => {
-      if (data.id === socket.id) {
-        setPlayerColor(data.color);
-      }
-    });
-  }, []);
 
   /**
    * Returns an object of type `BoardProps` for a given piece
@@ -304,6 +300,9 @@ const Board: React.FC<BoardProps> = (props) => {
     socket.once("markCheck", (data) => {
       BoardConfig[data.position].setColor(data.color);
     });
+    return () => {
+      socket.off("markCheck");
+    };
   }, [currentTurn]);
 
   useEffect(() => {
@@ -311,6 +310,9 @@ const Board: React.FC<BoardProps> = (props) => {
       BoardConfig[data.position0].setColor(data.color0);
       BoardConfig[data.position1].setColor(data.color1);
     });
+    return () => {
+      socket.off("unmarkCheck");
+    };
   }, [currentTurn]);
 
   /**
@@ -321,9 +323,12 @@ const Board: React.FC<BoardProps> = (props) => {
     socket.once("gameComplete", (data) => {
       console.log("+++ gameComplete +++", data);
       setGameComplete(true);
-      // @ts-ignore
-      setWinningColor(Utils.getPieceColor(data.piece));
+      const message = data.result.outcome + " by " + data.result.message;
+      setGameResult(message);
     });
+    return () => {
+      socket.off("gameComplete");
+    };
   }, []);
 
   /**
@@ -384,18 +389,49 @@ const Board: React.FC<BoardProps> = (props) => {
    * @returns {boolean} true if the opponent king has been checkmated, false otherwise
    */
 
-  const isCheckMate = (piece: PieceProps, pos: number, possibleMoves: Array<number>) => {
+  const isCheckMate = (piece: PieceProps, pos: number, oppMoves: number[], 
+    selfMoves: number[], attacks: number[]) => {
+
     const moves = new Hints(BoardConfig);
-    const validMoves = moves.getKingMoves(BoardConfig[pos].piece);
-    const checkMate = validMoves.every((val) => possibleMoves.includes(val));
-    if (checkMate) {
-      socket.emit("checkmate", {
-        piece: piece,
-        gameCode: gameCode,
-      });
-      return true;
+    if (attacks.length > 1) {
+      // Only way out => king to move (or capture)
+      const validKingMoves = moves.getKingMoves(BoardConfig[pos].piece);
+      const cannotMove = validKingMoves.every((val) => oppMoves.includes(val));
+      if (cannotMove) {
+        let result: Result = {outcome: "", message: ""};
+        const color = Utils.getPieceColor(piece).toUpperCase();
+        result.outcome = (color === "white" ? GameResultTypes.WHITE : GameResultTypes.BLACK);
+        result.message = "Checkmate"; 
+        socket.emit("game-complete", {
+          result: result,
+          piece: piece,
+          gameCode: gameCode,
+        });
+        return true;
+      } else {
+        for (let pos = 0; pos < validKingMoves.length; pos++) {
+          if (oppMoves.includes(validKingMoves[pos])) {
+            continue;
+          } else if (Utils.getPieceName(BoardConfig[validKingMoves[pos]].piece) === null) {
+            // empty cell not under attack => can move
+            return false;
+          } else {
+            // king tries to capture
+          }
+        }
+        return true;
+      }
     } else {
-      return false;
+      const attacker = attacks[0];
+      if (selfMoves.includes(attacker)) { 
+        // capture the attacking piece by non - king
+        return false;
+      } else if (1) {
+        // king tries to capture
+      } else {
+        // insert a piece in the way of king and attacker
+      }
+      return true;
     }
   };
 
@@ -407,22 +443,28 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const isCheck = (piece: PieceProps): [boolean, boolean] => {
     const moves = new Hints(BoardConfig);
-    const [found, selfKingPos, oppKingPos, possibleMoves] = moves.isCheck(piece);
-    if (found) {
+    const outVal = moves.isCheck(Utils.getPieceColor(piece));
+    if (outVal.attackingPieces.length > 0) {
       socket.emit("setCheck", {
         gameCode: gameCode,
-        position: oppKingPos,
+        position: outVal.oppKingPos,
         color: "check",
       });
-      const ischeckMate = isCheckMate(piece, oppKingPos, possibleMoves);
+      const ischeckMate = isCheckMate(
+        piece,
+        outVal.oppKingPos,
+        outVal.selfPossibleMoves,
+        outVal.oppPossibleMoves,
+        outVal.attackingPieces
+      );
       return [true, ischeckMate];
     } else {
       socket.emit("unsetCheck", {
         gameCode: gameCode,
-        position0: selfKingPos,
-        color0: Math.floor(selfKingPos / 8 + selfKingPos) % 2 ? "black" : "white",
-        position1: oppKingPos,
-        color1: Math.floor(oppKingPos / 8 + oppKingPos) % 2 ? "black" : "white",
+        position0: outVal.selfKingPos,
+        color0: Math.floor(outVal.selfKingPos / 8 + outVal.selfKingPos) % 2 ? "black" : "white",
+        position1: outVal.oppKingPos,
+        color1: Math.floor(outVal.oppKingPos / 8 + outVal.oppKingPos) % 2 ? "black" : "white",
       });
       return [false, false];
     }
@@ -649,7 +691,7 @@ const Board: React.FC<BoardProps> = (props) => {
         <Modal.Header>
           <Modal.Title>Game Over !</Modal.Title>
         </Modal.Header>
-        <Modal.Body>{`${winningColor} won by checkMate`}</Modal.Body>
+        <Modal.Body>{`${gameResult}`}</Modal.Body>
         <Modal.Footer>
           <Button
             variant="primary"

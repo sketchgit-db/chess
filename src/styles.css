@@ -210,7 +210,7 @@ ul {
   justify-content: space-between;
   padding: 2vmin;
   background-color:#fabc4f;
-  border-radius: 20px;
+  border-radius: 10px;
   border: 1px solid #a95517;
 }
 
@@ -224,8 +224,9 @@ ul {
 }
 
 .score-section {
-  width: 100%;
+  width: 30vmin;
   margin: 2vmin;
+  font-size: 20px;
 }
 
 .moves-panel-outline {
@@ -301,4 +302,12 @@ ul {
   background-color: #36312b;
   color: white;
   font-size: 20px;
+}
+
+.game-end-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  margin-top: 20px;
+  padding: 10px;
 }

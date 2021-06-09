@@ -100,9 +100,14 @@ io.on("connection", (socket) => {
     io.of("/").to(data.gameCode).emit("unmarkCheck", data);
   });
 
-  socket.on("checkmate", (data) => {
+  socket.on("game-complete", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("gameComplete", data);
+  });
+
+  socket.on("propose-draw", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("proposeDraw", data);
   });
 
   socket.on("getColor", (data) => {

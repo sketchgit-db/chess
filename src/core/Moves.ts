@@ -2,6 +2,19 @@ import { PieceProps } from "./Piece";
 import { BoardStatusProps } from "../components/Board";
 import * as Utils from "../utils/helpers";
 
+interface CheckProps {
+  selfKingPos: number;
+  oppKingPos: number;
+  selfPossibleMoves: number[];
+  oppPossibleMoves: number[];
+  attackingPieces: number[];
+}
+
+enum MoveType {
+  ANY = 0,
+  CAPTURE = 1
+}
+
 /**
  * Class computing the valid movements for all chess pieces at a given board configuration
  * @property {Array<BoardStatusProps>} _BoardConfig The state representing the board at the given instance
@@ -108,13 +121,17 @@ class Moves {
    * @returns {Array<number>} An array containing the valid Moves
    */
 
-  protected showValidMoves = (piece: PieceProps): Array<number> => {
+  protected showValidMoves = (piece: PieceProps, moveType: MoveType = MoveType.ANY): Array<number> => {
     const index = piece.position;
     const pieceName = Utils.getPieceName(piece);
     let validMoves: Array<number> = new Array<number>();
     switch (pieceName) {
       case "pawn":
-        validMoves = this.getPawnMoves(piece);
+        if (moveType === MoveType.CAPTURE) {
+          validMoves = this.getPawnCaptureMoves(piece);
+        } else {
+          validMoves = this.getPawnMoves(piece);
+        }
         break;
       case "rook":
         validMoves = this.getRookMoves(piece);
@@ -135,46 +152,60 @@ class Moves {
     return validMoves;
   };
 
+  public isCheckMate() {
+
+  }
+
   /**
    * Determine if the king opposite to `piece` is in check by any pieces of the color of `piece`
    * @param {PieceProps} piece
    * @returns {[boolean, number, number, Array<number>]} The position of the king in check (if any, else -1)
    */
 
-  public isCheck(piece: PieceProps): [boolean, number, number, Array<number>] {
-    const attackerColor = Utils.getPieceColor(piece);
+  public isCheck(attackerColor: string): CheckProps {
     const targetPiece = (attackerColor === "white" ? "black" : "white") + "-king";
-    let possibleMoves = new Array<number>();
-    let [oppKingPos, selfKingPos, found] = [-1, -1, false];
+    let outVal: CheckProps = { 
+      selfKingPos: -1, 
+      oppKingPos: -1, 
+      selfPossibleMoves: [], 
+      oppPossibleMoves: [], 
+      attackingPieces: [],
+    };
     for (let index = 0; index < 64; index++) {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
-      } else if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
-        if (Utils.getPieceName(this.BoardConfig[index].piece) === "king") {
-          selfKingPos = index;
-        }
-        const moves = this.showValidMoves(this.BoardConfig[index].piece);
-        possibleMoves = [...possibleMoves, ...moves];
-        for (let pos = 0; pos < moves.length; pos++) {
-          if (this.BoardConfig[moves[pos]].piece.pieceName === targetPiece) {
-            oppKingPos = moves[pos];
-            found = true;
+      } else {
+        const moves = this.showValidMoves(this.BoardConfig[index].piece, MoveType.CAPTURE);
+        if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
+          if (Utils.getPieceName(this.BoardConfig[index].piece) === "king") {
+            outVal.selfKingPos = index;
           }
+          outVal.selfPossibleMoves = [...outVal.selfPossibleMoves, ...moves];
+          for (let pos = 0; pos < moves.length; pos++) {
+            if (this.BoardConfig[moves[pos]].piece.pieceName === targetPiece) {
+              outVal.oppKingPos = moves[pos];
+              outVal.attackingPieces.push(index);
+            }
+          }
+        } else {
+          if (this.BoardConfig[index].piece.pieceName === targetPiece) {
+            outVal.oppKingPos = index;
+          } else {
+            outVal.oppPossibleMoves = [...outVal.oppPossibleMoves, ...moves];
+          } 
         }
-      } else if (this.BoardConfig[index].piece.pieceName === targetPiece) {
-        oppKingPos = index;
       }
     }
-    return [found, selfKingPos, oppKingPos, possibleMoves];
+    return outVal;
   }
 
   /**
-   * Get all valid moves and captures for the given Pawn `piece`
+   * Get all valid moves for the given Pawn `piece`
    * @param {PieceProps} piece
    * @returns {Array<number>} Valid moves for given Pawn
    */
 
-  public getPawnMoves(piece: PieceProps): Array<number> {
+  public getPawnNormalMoves(piece: PieceProps): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
     let moves = [];
@@ -190,15 +221,6 @@ class Moves {
           moves.push(Utils.getIndex(x - 2, y));
         }
       }
-      // Pawn capture
-      [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y + 1, color);
-      if (currMove) {
-        moves.push(Utils.getIndex(x - 1, y + 1));
-      }
-      [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y - 1, color);
-      if (currMove) {
-        moves.push(Utils.getIndex(x - 1, y - 1));
-      }
     } else {
       // Pawn free movement
       let [currMove, nextMove] = this.checkPawnMoveValidity(x + 1, y, color);
@@ -211,8 +233,31 @@ class Moves {
           moves.push(Utils.getIndex(x + 2, y));
         }
       }
-      // Pawn capture
-      [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
+    }
+    return moves;
+  }
+
+  /**
+   * Get all valid captures for the given Pawn `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<number>} Valid moves for given Pawn
+   */
+
+  public getPawnCaptureMoves(piece: PieceProps): Array<number> {
+    const color = Utils.getPieceColor(piece);
+    const [x, y] = Utils.getCoordinates(piece.position);
+    let moves = [];
+    if (color === "white") {
+      let [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y + 1, color);
+      if (currMove) {
+        moves.push(Utils.getIndex(x - 1, y + 1));
+      }
+      [currMove, nextMove] = this.checkPawnCaptureValidity(x - 1, y - 1, color);
+      if (currMove) {
+        moves.push(Utils.getIndex(x - 1, y - 1));
+      }
+    } else {
+      let [currMove, nextMove] = this.checkPawnCaptureValidity(x + 1, y + 1, color);
       if (currMove) {
         moves.push(Utils.getIndex(x + 1, y + 1));
       }
@@ -221,6 +266,20 @@ class Moves {
         moves.push(Utils.getIndex(x + 1, y - 1));
       }
     }
+    return moves;
+  }
+
+
+  /**
+   * Get all valid moves and captures for the given Pawn `piece`
+   * @param {PieceProps} piece
+   * @returns {Array<number>} Valid moves for given Pawn
+   */
+
+   public getPawnMoves(piece: PieceProps): Array<number> {
+    let moves = Array<number>();
+    moves = [...moves, ...this.getPawnNormalMoves(piece)];
+    moves = [...moves, ...this.getPawnCaptureMoves(piece)];
     return moves;
   }
 

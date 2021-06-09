@@ -1,10 +1,11 @@
-import React from "react";
-import { Alert, Card } from "react-bootstrap";
+import React, { useEffect } from "react";
+import { useHistory } from "react-router-dom";
+import { Alert, Button, Card, Modal } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
 import { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 
-import Board from "./Board";
+import Board, { GameResultTypes, Result } from "./Board";
 import Timer from "./Timer";
 
 import "../styles.css";
@@ -28,35 +29,48 @@ const GAME_TIME = 300;
  */
 
 const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => {
-  const {
-    socket,
-    match: { params },
-  } = props;
+  const history = useHistory();
+  const { socket, match: { params }} = props;
   const { gameCode } = params;
-  /**
-   * State representing the piece which will play the current turn
-   */
   const [currentTurn, setCurrentTurn] = React.useState("white");
-  /**
-   * State representing the points scored by the player with white pieces
-   */
   const [whitePoints, setWhitePoints] = React.useState(0);
-  /**
-   * State representing the points scored by the player with black pieces
-   */
   const [blackPoints, setBlackPoints] = React.useState(0);
-  /**
-   * State representing the moves in the game so far
-   */
   const [moves, setMoves] = React.useState(Array<string>());
-  /**
-   * State representing the time elapsed in the game for the black piece
-   */
   const [blackTimePeriod, setBlackTimePeriod] = React.useState(GAME_TIME);
-  /**
-   * State representing the time elapsed in the game for the white piece
-   */
   const [whiteTimePeriod, setWhiteTimePeriod] = React.useState(GAME_TIME);
+  const [playerColor, setPlayerColor] = React.useState("");
+  const [showDrawRequest, setShowDrawRequest] = React.useState(false);
+
+  /**
+   * Set the piece color used by the player on socket `socket`
+   */
+
+  useEffect(() => {
+    socket.emit("getColor", {
+      id: socket.id,
+      gameCode: gameCode,
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.on("setPlayerColor", (data) => {
+      if (data.id === socket.id) {
+        setPlayerColor(data.color);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.once("proposeDraw", (data) => {
+      if (socket.id !== data.socket) {
+        console.log(data.message);
+        setShowDrawRequest(true);
+      }
+    });
+    return () => {
+      socket.off("proposeDraw");
+    }
+  }, [currentTurn]);
 
   /**
    * Returns the moves so far in the game
@@ -79,6 +93,39 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     return gameMoves;
   };
 
+  const handleResign = () => {
+    let result: Result = { outcome: "", message: "" };
+    result.outcome = (currentTurn === "white" ? GameResultTypes.BLACK : GameResultTypes.WHITE);
+    result.message = "Opponent's Resignation";
+    socket.emit("game-complete", {
+      result: result,
+      gameCode: gameCode,
+    });
+    history.push("/");
+  };
+
+  const handleDraw = () => {
+    socket.emit("propose-draw", {
+      message: `${currentTurn} offered Draw`,
+      gameCode: gameCode
+    });
+  };
+
+  const handleAcceptDraw = () => {
+    setShowDrawRequest(false);
+    let result: Result = { outcome: "", message: "" };
+    result.outcome = GameResultTypes.DRAW;
+    result.message = "Mutual Agreement";
+    socket.emit("game-complete", {
+      result: result,
+      gameCode: gameCode,
+    });
+  };
+
+  const handleDeclineDraw = () => {
+    setShowDrawRequest(false);
+  }
+
   /**
    * Returns the Game Component
    * @returns {React.ReactElement} The Game component
@@ -98,6 +145,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
           setGameMoves={setMoves}
           socket={socket}
           gameCode={gameCode}
+          playerColor={playerColor}
         />
       </div>
       {/* Game information such as scores, moves etc. */}
@@ -107,13 +155,22 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
         </Alert>
 
         <div className="game-data">
+          <div className="game-end-buttons">
+            <Button disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
+              Offer Draw
+            </Button>
+            <Button disabled={playerColor !== currentTurn} variant="danger" size="lg" onClick={handleResign}>
+              Resign
+            </Button>
+          </div>
+
           <div className="score">
             <Card className="score-section" border={currentTurn === "white" ? "none" : "dark"}>
               <Card.Header>
                 <Card.Title>Black</Card.Title>
               </Card.Header>
               <Card.Body>
-                <Card.Text>{`Score: ${blackPoints}`}</Card.Text>
+                <Card.Text>{`${blackPoints}`}</Card.Text>
               </Card.Body>
               {/* <Timer timePeriod={blackTimePeriod} setTimePeriod={setBlackTimePeriod} paused={currentTurn === "white"} /> */}
             </Card>
@@ -122,7 +179,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
                 <Card.Title>White</Card.Title>
               </Card.Header>
               <Card.Body>
-                <Card.Text>{`Score: ${whitePoints}`}</Card.Text>
+                <Card.Text>{`${whitePoints}`}</Card.Text>
               </Card.Body>
               {/* <Timer timePeriod={whiteTimePeriod} setTimePeriod={setWhiteTimePeriod} paused={currentTurn === "black"} /> */}
             </Card>
@@ -138,6 +195,17 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
               </div>
             </Card>
           </div>
+
+          <Modal show={showDrawRequest}>
+            <Modal.Header>
+              <Modal.Title>{`${currentTurn} offered draw`}</Modal.Title>
+            </Modal.Header>
+            <Modal.Body style={{display: 'flex', flexDirection: "row", justifyContent: "space-around"}}>
+              <Button variant="success" onClick={handleAcceptDraw}>Accept Draw</Button>
+              <Button variant="danger" onClick={handleDeclineDraw}>Decline Draw</Button>
+            </Modal.Body>
+          </Modal>
+
         </div>
       </div>
     </div>
