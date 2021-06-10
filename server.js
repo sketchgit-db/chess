@@ -3,6 +3,17 @@ const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
 const cors = require("cors");
+const dotenv = require("dotenv");
+dotenv.config();
+
+const Firebase = require("firebase/app");
+require("firebase/database");
+
+Firebase.initializeApp({
+  apiKey: process.env.apiKey,
+  authDomain: process.env.authDomain,
+  databaseURL: process.env.databaseURL,
+});
 
 const io = require("socket.io")(server, {
   cors: {
@@ -103,6 +114,15 @@ io.on("connection", (socket) => {
   socket.on("game-complete", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("gameComplete", data);
+    const gameData = {
+      moves: data.gameMoves,
+      result: data.result,
+    };
+    const date = new Date();
+    const date_key = `${date.getDate()}-${date.getMonth()}-${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    const key = `/${data.gameCode}-${date_key}`;
+    console.log(key, gameData);
+    Firebase.database().ref(key).set(gameData);
   });
 
   socket.on("propose-draw", (data) => {

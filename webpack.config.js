@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const { EnvironmentPlugin } = require("webpack");
 
 module.exports = {
   entry: "./src/index.tsx",
@@ -43,5 +44,6 @@ module.exports = {
     new HtmlWebPackPlugin({
       template: "./src/index.html",
     }),
+    new EnvironmentPlugin({...process.env})
   ],
 };

@@ -152,8 +152,47 @@ class Moves {
     return validMoves;
   };
 
-  public isCheckMate() {
+  /**
+   * Check if a move by king at `pos0` to `pos1` doesn't cause it check
+   * @param {number} pos0 The starting position of the king
+   * @param {number} pos1 The destination of the king
+   * @param {string} attackerColor The color of the piece opposite to the king
+   * @returns {boolean} Whether the move from pos0 to pos1 is safe
+   */
 
+  public checkSafeAttack(pos0: number, pos1: number, attackerColor: string): boolean {
+    // king tries to capture
+    const [oldKingPos, oldKingType, oldKingName] = [
+      pos0,
+      this.BoardConfig[pos0].piece.type,
+      this.BoardConfig[pos0].piece.pieceName,
+    ];
+    const [oldCapPos, oldCapType, oldCapName] = [
+      pos1,
+      this.BoardConfig[pos1].piece.type,
+      this.BoardConfig[pos1].piece.pieceName,
+    ];
+    // swap
+    this.BoardConfig[pos0].piece.position = oldCapPos;
+    this.BoardConfig[pos0].piece.type = oldCapType;
+    this.BoardConfig[pos0].piece.pieceName = oldCapName;
+
+    this.BoardConfig[pos1].piece.position = oldKingPos;
+    this.BoardConfig[pos1].piece.type = oldKingType;
+    this.BoardConfig[pos1].piece.pieceName = oldKingName;
+
+    const outVal = this.isCheck(attackerColor);
+
+    // swap again
+    this.BoardConfig[pos1].piece.position = oldCapPos;
+    this.BoardConfig[pos1].piece.type = oldCapType;
+    this.BoardConfig[pos1].piece.pieceName = oldCapName;
+
+    this.BoardConfig[pos0].piece.position = oldKingPos;
+    this.BoardConfig[pos0].piece.type = oldKingType;
+    this.BoardConfig[pos0].piece.pieceName = oldKingName;
+
+    return outVal.attackingPieces.length == 0;
   }
 
   /**

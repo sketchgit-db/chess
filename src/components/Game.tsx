@@ -100,6 +100,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     socket.emit("game-complete", {
       result: result,
       gameCode: gameCode,
+      gameMoves: moves
     });
     history.push("/");
   };
@@ -119,6 +120,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     socket.emit("game-complete", {
       result: result,
       gameCode: gameCode,
+      gameMoves: moves
     });
   };
 
