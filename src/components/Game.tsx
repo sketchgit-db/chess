@@ -179,11 +179,11 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
 
         <div className="game-data">
           <div className="game-end-buttons">
-            <h2>
-              <Badge pill variant="light">
+            <div className="currentTurn">
+              <Badge variant="light">
                 {`${currentTurn === "white" ? player0 : player1}'s turn`}
               </Badge>
-            </h2>
+            </div>
             <Button disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
               Offer Draw
             </Button>

@@ -311,3 +311,13 @@ ul {
   margin-top: 20px;
   padding: 10px;
 }
+
+.currentTurn {
+  font-size: 30px;
+}
+
+@media screen and (max-width: 1000px) {
+  .currentTurn {
+    font-size: 15px;
+  }
+}

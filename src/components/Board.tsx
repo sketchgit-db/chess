@@ -12,7 +12,7 @@ import PromotionModal from "./PromotionModal";
 import PieceDetails from "../core/PieceDetails";
 import { PieceProps } from "../core/Piece";
 import Hints from "../utils/Hints";
-import * as Utils from "../utils/helpers";
+import * as utils from "../utils/helpers";
 
 import "../styles.css";
 
@@ -68,7 +68,7 @@ export interface BoardProps {
 
 const Board: React.FC<BoardProps> = (props) => {
   const history = useHistory();
-  const dummyPiece: PieceProps = Utils.getEmptyCell(-1);
+  const dummyPiece: PieceProps = utils.getEmptyCell(-1);
   const [gameComplete, setGameComplete] = React.useState(false);
   const [gameResult, setGameResult] = React.useState("");
   const [hintCells, updateHintCells] = React.useState(Array<number>());
@@ -161,27 +161,27 @@ const Board: React.FC<BoardProps> = (props) => {
 
     // rnbqkbnr
     for (let index = 0; index < 8; index++) {
-      const _piece = Utils.getNewPiece("black-piece", black_row[index], index);
+      const _piece = utils.getNewPiece("black-piece", black_row[index], index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
     // pppppppp
     for (let index = 8; index < 16; index++) {
-      const _piece = Utils.getNewPiece("black-piece", PieceDetails.BLACK_PAWN, index);
+      const _piece = utils.getNewPiece("black-piece", PieceDetails.BLACK_PAWN, index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
     // 8/8/8/8
     for (let index = 16; index < 48; index++) {
-      const _piece = Utils.getEmptyCell(index);
+      const _piece = utils.getEmptyCell(index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
     // PPPPPPPP
     for (let index = 48; index < 56; index++) {
-      const _piece = Utils.getNewPiece("white-piece", PieceDetails.WHITE_PAWN, index);
+      const _piece = utils.getNewPiece("white-piece", PieceDetails.WHITE_PAWN, index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
     // RNBQKBNR
     for (let index = 56; index < 64; index++) {
-      const _piece = Utils.getNewPiece("white-piece", white_row[index % 8], index);
+      const _piece = utils.getNewPiece("white-piece", white_row[index % 8], index);
       BoardConfig = [...BoardConfig, updateBoardConfig(index, _piece)];
     }
 
@@ -339,7 +339,7 @@ const Board: React.FC<BoardProps> = (props) => {
    */
 
   const updateScores = (from: PieceProps, value: number) => {
-    if (Utils.getPieceColor(from) === "white") {
+    if (utils.getPieceColor(from) === "white") {
       setWhitePoints(whitePoints + value);
     } else {
       setBlackPoints(blackPoints + value);
@@ -394,83 +394,44 @@ const Board: React.FC<BoardProps> = (props) => {
   const checkSafeAttack = (pos0: number, pos1: number, attackerColor: string): boolean => {
     const moves = new Hints(BoardConfig);
     return moves.checkSafeAttack(pos0, pos1, attackerColor);
-  }
+  };
 
   /**
-   * Checks if the opponent king to the attacking `piece` is in checkMate
-   * @param {PieceProps} piece The latest piece which caused check
-   * @param {number} kingPos The position of the opponent king
-   * @returns {boolean} true if the opponent king has been checkmated, false otherwise
+   * Get whether the king at `kingPos` is checkmate by the opponent
+   * @param {PieceProps} piece The opponent piece which put the king in check
+   * @param {number} kingPos The position of the king under check
+   * @param {number[]} oppMoves The list of capture moves available to the opponent piece
+   * @param {number[]} selfMoves The list of moves (simple move by pawn included) by the pieces of the king's type
+   * @param {number[]} attacks The list of pieces putting the king in check
+   * @returns {boolean} Whether the king at `kingPos` is checkmate by the opponent
    */
 
-  const isCheckMate = (piece: PieceProps, pos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) => {
+  const isCheckMate = (piece: PieceProps, kingPos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) => {
     const moves = new Hints(BoardConfig);
     let result: Result = { outcome: "", message: "" };
-    const color = Utils.getPieceColor(piece).toUpperCase();
+    const color = utils.getPieceColor(piece).toUpperCase();
     result.outcome = color === "white" ? GameResultTypes.WHITE : GameResultTypes.BLACK;
     result.message = "Checkmate";
-    if (attacks.length > 1) {
-      // Only way out => king to move (or capture)
-      const validKingMoves = moves.getKingMoves(BoardConfig[pos].piece);
-      const cannotMove = validKingMoves.every((val) => oppMoves.includes(val));
-      if (cannotMove) {
-        socket.emit("game-complete", {
-          result: result,
-          gameCode: gameCode,
-          gameMoves: gameMoves
-        });
-        return true;
-      } else {
-        for (let pos = 0; pos < validKingMoves.length; pos++) {
-          if (oppMoves.includes(validKingMoves[pos])) {
-            continue;
-          } else if (Utils.getPieceName(BoardConfig[validKingMoves[pos]].piece) === null) {
-            // empty cell not under attack => can move
-            return false;
-          } else {
-            const attackedPiece = BoardConfig[validKingMoves[pos]].piece;
-            if (checkSafeAttack(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
-              return false;
-            }
-          }
-        }
-        socket.emit("game-complete", {
-          result: result,
-          piece: piece,
-          gameCode: gameCode,
-        });
-        return true;
-      }
-    } else {
-      const attacker = attacks[0];
-      console.log(attacker, selfMoves);
-      if (selfMoves.includes(attacker)) {
-        // capture the attacking piece by non - king
-        return false;
-      } else if (checkSafeAttack(pos, attacker, Utils.getPieceColor(BoardConfig[attacker].piece))) {
-          return false;
-      } else {
-        // insert a piece in the way of king and attacker
-      }
+    const ischeckMate = moves.isCheckMate(kingPos, oppMoves, selfMoves, attacks);
+    if (ischeckMate) {
       socket.emit("game-complete", {
         result: result,
-        piece: piece,
         gameCode: gameCode,
+        gameMoves: gameMoves,
       });
-      return true;
     }
+    return ischeckMate;
   };
 
   /**
    * Checks if the attacking `piece` causes a check to the opponent king
    * @param {PieceProps} piece The attacking piece
-   * @returns {[boolean, boolean]} [isCheck, isCheckMate] for the opponent king
+   * @returns {[boolean, boolean]} [ischeck, ischeckmate] for the opponent king
    */
 
   const isCheck = (piece: PieceProps): [boolean, boolean] => {
     const moves = new Hints(BoardConfig);
-    const outVal = moves.isCheck(Utils.getPieceColor(piece));
-    console.log(outVal.attackingPieces);
+    const outVal = moves.isCheck(utils.getPieceColor(piece));
     if (outVal.attackingPieces.length > 0) {
       socket.emit("setCheck", {
         gameCode: gameCode,
@@ -491,7 +452,7 @@ const Board: React.FC<BoardProps> = (props) => {
           gameCode: gameCode,
           position: pieceInCheck,
           color: Math.floor(pieceInCheck / 8 + pieceInCheck) % 2 ? "black" : "white",
-        });    
+        });
       }
       return [false, false];
     }
@@ -506,7 +467,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const checkPromotion = (from: PieceProps, to: PieceProps): boolean => {
     let possible: boolean = true;
-    possible &&= Utils.getPieceName(from) === "pawn";
+    possible &&= utils.getPieceName(from) === "pawn";
     let rank = Math.floor(to.position / 8);
     possible &&= rank == 0 || rank == 7;
     return possible;
@@ -545,7 +506,7 @@ const Board: React.FC<BoardProps> = (props) => {
   const performCapture = (from: PieceProps, to: PieceProps) => {
     const [posFrom, posTo] = [from.position, to.position];
     console.log(`Making a capture from ${posFrom} to ${posTo}`);
-    const emptyCell = Utils.getEmptyCell(posFrom);
+    const emptyCell = utils.getEmptyCell(posFrom);
     from.position = posTo;
     to.position = posFrom;
     from.numMoves += 1;
@@ -569,7 +530,7 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const performPromotion = (from: PieceProps, to: PieceProps) => {
     const newPos = [from.position, to.position];
-    const color = Utils.getPieceColor(from);
+    const color = utils.getPieceColor(from);
     setPromotionPos([...newPos]);
     setPawnPromotionType(color + "-promotion");
   };
@@ -582,8 +543,8 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const performCastling = (from: PieceProps, to: PieceProps) => {
     const [posFrom, posTo] = [from.position, to.position];
-    const emptyCell0 = Utils.getEmptyCell(posFrom);
-    const emptyCell1 = Utils.getEmptyCell(posTo);
+    const emptyCell0 = utils.getEmptyCell(posFrom);
+    const emptyCell1 = utils.getEmptyCell(posTo);
     let [newKingPos, newRookPos] = [posFrom, posTo];
     if (posFrom < posTo) {
       // kingSide
@@ -626,7 +587,7 @@ const Board: React.FC<BoardProps> = (props) => {
     } else if (to.pieceName === null) {
       performMove(from, to);
       return MoveTypes.MOVE;
-    } else if (Utils.getPieceColor(to) === Utils.getPieceColor(from)) {
+    } else if (utils.getPieceColor(to) === utils.getPieceColor(from)) {
       performCastling(from, to);
       return MoveTypes.CASTLE;
     } else {
@@ -671,7 +632,7 @@ const Board: React.FC<BoardProps> = (props) => {
       const moveType = makeMove(clickedPiece, piece);
       moves.hideHints(hintCells);
     } else {
-      const color = Utils.getPieceColor(piece);
+      const color = utils.getPieceColor(piece);
       if (color === currentTurn && color == playerColor) {
         updateClickedPiece(piece);
         moves.hideHints(hintCells);

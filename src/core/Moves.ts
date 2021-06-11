@@ -12,7 +12,7 @@ interface CheckProps {
 
 enum MoveType {
   ANY = 0,
-  CAPTURE = 1
+  CAPTURE = 1,
 }
 
 /**
@@ -196,6 +196,80 @@ class Moves {
   }
 
   /**
+   * Get whether the king at `kingPos` is checkmate by the opponent
+   * @param {number} kingPos The position of the king under check
+   * @param {number[]} oppMoves The list of capture moves available to the opponent piece
+   * @param {number[]} selfMoves The list of moves (simple move by pawn included) by the pieces of the king's type
+   * @param {number[]} attacks The list of pieces putting the king in check
+   * @returns {boolean} Whether the king at `kingPos` is checkmate by the opponent
+   */
+
+  public isCheckMate(kingPos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) {
+    if (attacks.length > 1) {
+      // Only way out => king to move (or capture)
+      const validKingMoves = this.getKingMoves(this.BoardConfig[kingPos].piece);
+      const cannotMove = validKingMoves.every((val) => oppMoves.includes(val));
+      if (cannotMove) {
+        return true;
+      } else {
+        for (let pos = 0; pos < validKingMoves.length; pos++) {
+          if (oppMoves.includes(validKingMoves[pos])) {
+            continue;
+          } else if (Utils.getPieceName(this.BoardConfig[validKingMoves[pos]].piece) === null) {
+            // empty cell not under attack => can move
+            return false;
+          } else {
+            // capture by king
+            const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
+            if (this.checkSafeAttack(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+    } else {
+      const attacker = attacks[0];
+      if (selfMoves.includes(attacker)) {
+        // capture the attacking piece by non - king
+        return false;
+      } else if (this.checkSafeAttack(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))) {
+        // capture by king
+        return false;
+      } else {
+        // insert a piece in the way of king and attacker
+        if (Utils.getPieceName(this.BoardConfig[attacker].piece) !== "knight") {
+          const [x0, y0] = Utils.getCoordinates(kingPos);
+          const [x1, y1] = Utils.getCoordinates(attacker);
+          const available = new Array<number>();
+          if (y1 - y0 === x1 - x0) {
+            // diagonal
+            for (let p = Math.min(x0, x1) + 1; p <= Math.max(x0, x1) - 1; p++) {
+              available.push(Utils.getIndex(p, p + y0 - x0));
+            }
+          } else if (x0 == x1) {
+            // row-wise
+            for (let y = Math.min(y0, y1) + 1; y <= Math.max(y0, y1) - 1; y++) {
+              available.push(Utils.getIndex(x0, y));
+            }
+          } else {
+            // col-wise
+            for (let x = Math.min(x0, x1) + 1; x <= Math.max(x0, x1) - 1; x++) {
+              available.push(Utils.getIndex(x, y0));
+            }
+          }
+          for (let index = 0; index < available.length; index++) {
+            if (selfMoves.includes(available[index])) {
+              return false;
+            }
+          }
+        }
+      }
+      return true;
+    }
+  }
+
+  /**
    * Determine if the king opposite to `piece` is in check by any pieces of the color of `piece`
    * @param {PieceProps} piece
    * @returns {[boolean, number, number, Array<number>]} The position of the king in check (if any, else -1)
@@ -203,19 +277,19 @@ class Moves {
 
   public isCheck(attackerColor: string): CheckProps {
     const targetPiece = (attackerColor === "white" ? "black" : "white") + "-king";
-    let outVal: CheckProps = { 
-      selfKingPos: -1, 
-      oppKingPos: -1, 
-      selfPossibleMoves: [], 
-      oppPossibleMoves: [], 
+    let outVal: CheckProps = {
+      selfKingPos: -1,
+      oppKingPos: -1,
+      selfPossibleMoves: [],
+      oppPossibleMoves: [],
       attackingPieces: [],
     };
     for (let index = 0; index < 64; index++) {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
       } else {
-        const moves = this.showValidMoves(this.BoardConfig[index].piece, MoveType.CAPTURE);
         if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
+          const moves = this.showValidMoves(this.BoardConfig[index].piece, MoveType.CAPTURE);
           if (Utils.getPieceName(this.BoardConfig[index].piece) === "king") {
             outVal.selfKingPos = index;
           }
@@ -227,11 +301,12 @@ class Moves {
             }
           }
         } else {
+          const moves = this.showValidMoves(this.BoardConfig[index].piece);
           if (this.BoardConfig[index].piece.pieceName === targetPiece) {
             outVal.oppKingPos = index;
           } else {
             outVal.oppPossibleMoves = [...outVal.oppPossibleMoves, ...moves];
-          } 
+          }
         }
       }
     }
@@ -308,14 +383,13 @@ class Moves {
     return moves;
   }
 
-
   /**
    * Get all valid moves and captures for the given Pawn `piece`
    * @param {PieceProps} piece
    * @returns {Array<number>} Valid moves for given Pawn
    */
 
-   public getPawnMoves(piece: PieceProps): Array<number> {
+  public getPawnMoves(piece: PieceProps): Array<number> {
     let moves = Array<number>();
     moves = [...moves, ...this.getPawnNormalMoves(piece)];
     moves = [...moves, ...this.getPawnCaptureMoves(piece)];

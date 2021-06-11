@@ -218,6 +218,9 @@ const Home: React.FC<HomeProps> = (props) => {
           </li>
           <ul>
             <li>
+              Enter your name in the Input Box
+            </li>
+            <li>
               Copy the displayed Game Code, share it with your opponent and click <b>Start Game</b>
             </li>
             <li>The game starts once your opponent enters the code</li>
@@ -227,6 +230,9 @@ const Home: React.FC<HomeProps> = (props) => {
             click <b>Join an existing game</b>
           </li>
           <ul>
+            <li>
+              Enter your name in the Input Box
+            </li>
             <li>
               Enter the code and click <b>Start Game</b>
             </li>
