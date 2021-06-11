@@ -22,27 +22,13 @@ export interface HomeProps {
 
 const Home: React.FC<HomeProps> = (props) => {
   const history = useHistory();
-  /**
-   * State representing the gameCode
-   */
   const [gameCode, setGameCode] = React.useState("");
-  /**
-   * State representing the user input in case of join existing game
-   */
   const [formInput, setFormInput] = React.useState("");
-  /**
-   * Toggle to enable / disable the create new game button
-   */
   const [createGame, setCreateGame] = React.useState(false);
-  /**
-   * Toggle to enable / disable the join existing game button
-   */
   const [joinGame, setJoinGame] = React.useState(false);
-
   const [waitingMessage, setWaitingMessage] = React.useState("");
-
   const [wrongCodeMessage, setWrongCodeMessage] = React.useState("");
-
+  const [playerName, setPlayerName] = React.useState("");
   const { socket } = props;
 
   /**
@@ -66,10 +52,16 @@ const Home: React.FC<HomeProps> = (props) => {
     setCreateGame(false);
     setWaitingMessage("");
   };
+
   const showJoinGameModal = () => setJoinGame(true);
+
   const hideJoinGameModal = () => {
     setJoinGame(false);
     setWrongCodeMessage("");
+  };
+
+  const handleSetName = (event: any) => {
+    setPlayerName(event.target.value);
   };
 
   /**
@@ -84,7 +76,11 @@ const Home: React.FC<HomeProps> = (props) => {
    * Routes the current window to the game window
    */
   const handleCreateGame = () => {
-    socket.emit("createGame", gameCode);
+    socket.emit("createGame", {
+      gameCode: gameCode,
+      name: playerName,
+      position: 0,
+    });
     socket.once("createGameResponse", (res: any) => {
       console.log("Player 1 joined");
       console.log(res);
@@ -96,7 +92,11 @@ const Home: React.FC<HomeProps> = (props) => {
    * Checks if the gameCode entered by user matches an existing game and routes to the game
    */
   const handleJoinGame = () => {
-    socket.emit("joinGame", formInput);
+    socket.emit("joinGame", {
+      gameCode: formInput,
+      name: playerName,
+      position: 1,
+    });
     socket.once("joinGameResponse", (res: any) => {
       if (res.response === "player joined") {
         console.log("Both players joined");
@@ -129,6 +129,17 @@ const Home: React.FC<HomeProps> = (props) => {
             </Modal.Header>
 
             <Modal.Body>
+              <InputGroup className="mb-3">
+                <InputGroup.Prepend>
+                  <InputGroup.Text id="basic-addon1">#</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl
+                  placeholder="Enter your Name"
+                  aria-label="Enter your Name"
+                  onChange={handleSetName}
+                  type="text"
+                />
+              </InputGroup>
               <Alert variant="success">
                 {" "}
                 Your Game Code is <b>{gameCode}</b>
@@ -161,6 +172,17 @@ const Home: React.FC<HomeProps> = (props) => {
             </Modal.Header>
 
             <Modal.Body>
+              <InputGroup className="mb-3">
+                <InputGroup.Prepend>
+                  <InputGroup.Text id="basic-addon1">#</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl
+                  placeholder="Enter your Name"
+                  aria-label="Enter your Name"
+                  onChange={handleSetName}
+                  type="text"
+                />
+              </InputGroup>
               <InputGroup className="mb-3">
                 <InputGroup.Prepend>
                   <InputGroup.Text id="basic-addon1">#</InputGroup.Text>

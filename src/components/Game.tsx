@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useHistory } from "react-router-dom";
-import { Alert, Button, Card, Modal } from "react-bootstrap";
+import { Alert, Badge, Button, Card, Modal } from "react-bootstrap";
 import { RouteComponentProps } from "react-router";
 import { Socket } from "socket.io-client";
 import { DefaultEventsMap } from "socket.io-client/build/typed-events";
@@ -30,7 +30,10 @@ const GAME_TIME = 300;
 
 const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => {
   const history = useHistory();
-  const { socket, match: { params }} = props;
+  const {
+    socket,
+    match: { params },
+  } = props;
   const { gameCode } = params;
   const [currentTurn, setCurrentTurn] = React.useState("white");
   const [whitePoints, setWhitePoints] = React.useState(0);
@@ -40,6 +43,8 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
   const [whiteTimePeriod, setWhiteTimePeriod] = React.useState(GAME_TIME);
   const [playerColor, setPlayerColor] = React.useState("");
   const [showDrawRequest, setShowDrawRequest] = React.useState(false);
+  const [player0, setPlayer0] = React.useState("");
+  const [player1, setPlayer1] = React.useState("");
 
   /**
    * Set the piece color used by the player on socket `socket`
@@ -52,10 +57,26 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     });
   }, []);
 
+  /**
+   * Set player's name and piece color
+   */
   useEffect(() => {
     socket.on("setPlayerColor", (data) => {
       if (data.id === socket.id) {
         setPlayerColor(data.color);
+      }
+      if (data.position) {
+        if (data.name !== "") {
+          setPlayer1(data.name);
+        } else {
+          setPlayer1("Black");
+        }
+      } else {
+        if (data.name !== "") {
+          setPlayer0(data.name);
+        } else {
+          setPlayer0("White");
+        }
       }
     });
   }, []);
@@ -69,7 +90,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     });
     return () => {
       socket.off("proposeDraw");
-    }
+    };
   }, [currentTurn]);
 
   /**
@@ -95,12 +116,12 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
 
   const handleResign = () => {
     let result: Result = { outcome: "", message: "" };
-    result.outcome = (currentTurn === "white" ? GameResultTypes.BLACK : GameResultTypes.WHITE);
+    result.outcome = currentTurn === "white" ? GameResultTypes.BLACK : GameResultTypes.WHITE;
     result.message = "Opponent's Resignation";
     socket.emit("game-complete", {
       result: result,
       gameCode: gameCode,
-      gameMoves: moves
+      gameMoves: moves,
     });
     history.push("/");
   };
@@ -108,7 +129,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
   const handleDraw = () => {
     socket.emit("propose-draw", {
       message: `${currentTurn} offered Draw`,
-      gameCode: gameCode
+      gameCode: gameCode,
     });
   };
 
@@ -120,13 +141,13 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
     socket.emit("game-complete", {
       result: result,
       gameCode: gameCode,
-      gameMoves: moves
+      gameMoves: moves,
     });
   };
 
   const handleDeclineDraw = () => {
     setShowDrawRequest(false);
-  }
+  };
 
   /**
    * Returns the Game Component
@@ -158,6 +179,11 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
 
         <div className="game-data">
           <div className="game-end-buttons">
+            <h2>
+              <Badge pill variant="light">
+                {`${currentTurn === "white" ? player0 : player1}'s turn`}
+              </Badge>
+            </h2>
             <Button disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
               Offer Draw
             </Button>
@@ -165,11 +191,10 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
               Resign
             </Button>
           </div>
-
           <div className="score">
-            <Card className="score-section" border={currentTurn === "white" ? "none" : "dark"}>
+            <Card bg="dark" text="light" className="score-section" border={currentTurn === "white" ? "none" : "light"}>
               <Card.Header>
-                <Card.Title>Black</Card.Title>
+                <Card.Title>{player1}</Card.Title>
               </Card.Header>
               <Card.Body>
                 <Card.Text>{`${blackPoints}`}</Card.Text>
@@ -178,7 +203,7 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
             </Card>
             <Card className="score-section" border={currentTurn === "white" ? "dark" : "none"}>
               <Card.Header>
-                <Card.Title>White</Card.Title>
+                <Card.Title>{player0}</Card.Title>
               </Card.Header>
               <Card.Body>
                 <Card.Text>{`${whitePoints}`}</Card.Text>
@@ -200,14 +225,17 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
 
           <Modal show={showDrawRequest}>
             <Modal.Header>
-              <Modal.Title>{`${currentTurn} offered draw`}</Modal.Title>
+              <Modal.Title>{`${currentTurn} offered a draw`}</Modal.Title>
             </Modal.Header>
-            <Modal.Body style={{display: 'flex', flexDirection: "row", justifyContent: "space-around"}}>
-              <Button variant="success" onClick={handleAcceptDraw}>Accept Draw</Button>
-              <Button variant="danger" onClick={handleDeclineDraw}>Decline Draw</Button>
+            <Modal.Body style={{ display: "flex", flexDirection: "row", justifyContent: "space-around" }}>
+              <Button variant="success" onClick={handleAcceptDraw}>
+                Accept Draw
+              </Button>
+              <Button variant="danger" onClick={handleDeclineDraw}>
+                Decline Draw
+              </Button>
             </Modal.Body>
           </Modal>
-
         </div>
       </div>
     </div>

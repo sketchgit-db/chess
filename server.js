@@ -42,43 +42,57 @@ let socketPlayerMapping = new Map();
 io.on("connection", (socket) => {
   console.log(`${socket.id} connected`);
 
-  socket.on("createGame", (gameCode) => {
-    console.log("createGame: " + gameCode);
-    socket.join(gameCode);
+  socket.on("createGame", (data) => {
+    console.log("createGame: " + data.gameCode);
+    socket.join(data.gameCode);
     socket.emit("createGameResponse", {
       response: "player joined",
       playerId: 0,
+      meta: data,
     });
-    socketPlayerMapping.set(socket.id, "white");
-    console.log(`createGame: `, io.of("/").adapter.rooms.get(gameCode));
+    socketPlayerMapping.set(socket.id, {
+      color: "white",
+      position: data.position,
+      name: data.name,
+    });
+    console.log(`createGame: `, io.of("/").adapter.rooms.get(data.gameCode));
   });
 
-  socket.on("joinGame", (gameCode) => {
-    console.log("joinGame: " + gameCode);
-    const room = io.of("/").adapter.rooms.get(gameCode);
+  socket.on("joinGame", (data) => {
+    console.log("joinGame: " + data.gameCode);
+    const room = io.of("/").adapter.rooms.get(data.gameCode);
     if (room && room.size === 1) {
-      socket.join(gameCode);
-      socketPlayerMapping.set(socket.id, "black");
+      socket.join(data.gameCode);
+      socketPlayerMapping.set(socket.id, {
+        color: "black",
+        position: data.position,
+        name: data.name,
+      });
       socket.emit("joinGameResponse", {
         response: "player joined",
         playerId: 1,
       });
       console.log(socketPlayerMapping);
-      io.of("/").to(gameCode).emit("start-game", gameCode);
-      console.log(`joinGame: `, io.of("/").adapter.rooms.get(gameCode));
+      io.of("/").to(data.gameCode).emit("start-game", data.gameCode);
+      console.log(`joinGame: `, io.of("/").adapter.rooms.get(data.gameCode));
     } else if (!room) {
       socket.emit("joinGameResponse", {
-        response: `Room ${gameCode} doesn't exist. Please check the code`,
+        response: `Room ${data.gameCode} doesn't exist. Please check the code`,
         playerId: -1,
       });
-      console.log(`Room ${gameCode} doesn't exist. Please check the code`);
+      console.log(`Room ${data.gameCode} doesn't exist. Please check the code`);
     } else {
       socket.emit("joinGameResponse", {
-        response: `Room ${gameCode} is full. Try another room`,
+        response: `Room ${data.gameCode} is full. Try another room`,
         playerId: -1,
       });
-      console.log(`Room ${gameCode} is full. Try another room`);
+      console.log(`Room ${data.gameCode} is full. Try another room`);
     }
+  });
+
+  socket.on("setPlayerName", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("set-player-name", data);
   });
 
   socket.on("perform-move", (data) => {
@@ -119,8 +133,10 @@ io.on("connection", (socket) => {
       result: data.result,
     };
     const date = new Date();
-    const date_key = `${date.getDate()}-${date.getMonth()}-${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
-    const key = `/${data.gameCode}-${date_key}`;
+    const date_key = `${date.getDate()}-${
+      date.getMonth() + 1
+    }-${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    const key = `/${date_key}-${data.gameCode}`;
     console.log(key, gameData);
     Firebase.database().ref(key).set(gameData);
   });
@@ -131,7 +147,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getColor", (data) => {
-    data = { ...data, color: socketPlayerMapping.get(data.id) };
+    const meta = socketPlayerMapping.get(data.id);
+    data = { ...data, color: meta.color, name: meta.name, position: meta.position };
+    console.log(data);
     io.of("/").to(data.gameCode).emit("setPlayerColor", data);
   });
 
