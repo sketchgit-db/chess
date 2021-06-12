@@ -160,7 +160,7 @@ class Moves {
    * @returns {boolean} Whether the move from pos0 to pos1 is safe
    */
 
-  public checkSafeAttack(pos0: number, pos1: number, attackerColor: string): boolean {
+  public checkAttackSafety(pos0: number, pos1: number, attackerColor: string): boolean {
     // king tries to capture
     const [oldKingPos, oldKingType, oldKingName] = [
       pos0,
@@ -172,10 +172,10 @@ class Moves {
       this.BoardConfig[pos1].piece.type,
       this.BoardConfig[pos1].piece.pieceName,
     ];
-    // swap
+    // attack by king at pos0 to piece at pos1
     this.BoardConfig[pos0].piece.position = oldCapPos;
-    this.BoardConfig[pos0].piece.type = oldCapType;
-    this.BoardConfig[pos0].piece.pieceName = oldCapName;
+    this.BoardConfig[pos0].piece.type = "empty-cell";
+    this.BoardConfig[pos0].piece.pieceName = null;
 
     this.BoardConfig[pos1].piece.position = oldKingPos;
     this.BoardConfig[pos1].piece.type = oldKingType;
@@ -183,7 +183,7 @@ class Moves {
 
     const outVal = this.isCheck(attackerColor);
 
-    // swap again
+    // undo the move
     this.BoardConfig[pos1].piece.position = oldCapPos;
     this.BoardConfig[pos1].piece.type = oldCapType;
     this.BoardConfig[pos1].piece.pieceName = oldCapName;
@@ -193,6 +193,24 @@ class Moves {
     this.BoardConfig[pos0].piece.pieceName = oldKingName;
 
     return outVal.attackingPieces.length == 0;
+  }
+
+  public canKingMove(validKingMoves: number[], oppMoves: number[]): boolean {
+    for (let pos = 0; pos < validKingMoves.length; pos++) {
+      if (oppMoves.includes(validKingMoves[pos])) {
+        continue;
+      } else if (Utils.getPieceName(this.BoardConfig[validKingMoves[pos]].piece) === null) {
+        // empty cell not under attack => can move
+        return true;
+      } else {
+        // capture by king
+        const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
+        if (this.checkAttackSafety(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**
@@ -205,37 +223,28 @@ class Moves {
    */
 
   public isCheckMate(kingPos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) {
+    const validKingMoves = this.getKingMoves(this.BoardConfig[kingPos].piece, true);
     if (attacks.length > 1) {
       // Only way out => king to move (or capture)
-      const validKingMoves = this.getKingMoves(this.BoardConfig[kingPos].piece);
       const cannotMove = validKingMoves.every((val) => oppMoves.includes(val));
       if (cannotMove) {
         return true;
       } else {
-        for (let pos = 0; pos < validKingMoves.length; pos++) {
-          if (oppMoves.includes(validKingMoves[pos])) {
-            continue;
-          } else if (Utils.getPieceName(this.BoardConfig[validKingMoves[pos]].piece) === null) {
-            // empty cell not under attack => can move
-            return false;
-          } else {
-            // capture by king
-            const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
-            if (this.checkSafeAttack(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
-              return false;
-            }
-          }
-        }
-        return true;
+        return !this.canKingMove(validKingMoves, oppMoves);
       }
     } else {
       const attacker = attacks[0];
-      const validKingMoves = this.getKingMoves(this.BoardConfig[kingPos].piece);
       if (selfMoves.includes(attacker)) {
         // capture the attacking piece by non - king
         return false;
-      } else if (validKingMoves.includes(attacker) && this.checkSafeAttack(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))) {
+      } else if (
+        validKingMoves.includes(attacker) &&
+        this.checkAttackSafety(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))
+      ) {
         // capture by king
+        return false;
+      } else if (this.canKingMove(validKingMoves, oppMoves)) {
+        // move king to other cell
         return false;
       } else {
         // insert a piece in the way of king and attacker
@@ -649,7 +658,7 @@ class Moves {
    * @returns {Array<number>} Valid moves for given King
    */
 
-  public getKingMoves(piece: PieceProps): Array<number> {
+  public getKingMoves(piece: PieceProps, inCheck: boolean = false): Array<number> {
     const color = Utils.getPieceColor(piece);
     const [x, y] = Utils.getCoordinates(piece.position);
     let moves = [];
@@ -661,7 +670,9 @@ class Moves {
         moves.push(Utils.getIndex(x + dx[index], y + dy[index]));
       }
     }
-    moves = [...moves, ...this.getCastlingMoves(piece)];
+    if (inCheck === false) {
+      moves = [...moves, ...this.getCastlingMoves(piece)];
+    }
     return moves;
   }
 }
