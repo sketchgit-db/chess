@@ -4,6 +4,8 @@ _Currently in Development_
 
 A `TypeScript` and `WebSockets` based implementation of the game of chess
 
+_Note - A `Firebase RealTime Database` stores moves and result of each completed game (For analysis purposes)_ 
+
 ## Access on the web
 
 Open [the-chess-game.herokuapp.com](https://the-chess-game.herokuapp.com/) in a browser and invite your friend to play

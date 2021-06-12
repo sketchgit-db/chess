@@ -133,9 +133,11 @@ io.on("connection", (socket) => {
       result: data.result,
     };
     const date = new Date();
-    const date_key = `${date.getDate()}-${
-      date.getMonth() + 1
-    }-${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    const [dd, mm, yyyy] = [date.getDate(), date.getMonth() + 1, date.getFullYear()];
+    const [hh, MM, ss] = [date.getHours(), date.getMinutes(), date.getSeconds()];
+    let date_key = "";
+    date_key += `${dd < 10 ? `0${dd}`: dd}-${mm < 10 ? `0${mm}`: mm}-${yyyy} `;
+    date_key += `${hh < 10 ? `0${hh}`: hh}:${MM < 10 ? `0${MM}`: MM}:${ss < 10 ? `0${ss}`: ss}`;
     const key = `/${date_key}-${data.gameCode}`;
     console.log(key, gameData);
     Firebase.database().ref(key).set(gameData);

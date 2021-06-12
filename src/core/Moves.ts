@@ -230,29 +230,35 @@ class Moves {
       }
     } else {
       const attacker = attacks[0];
+      const validKingMoves = this.getKingMoves(this.BoardConfig[kingPos].piece);
       if (selfMoves.includes(attacker)) {
         // capture the attacking piece by non - king
         return false;
-      } else if (this.checkSafeAttack(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))) {
+      } else if (validKingMoves.includes(attacker) && this.checkSafeAttack(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))) {
         // capture by king
         return false;
       } else {
         // insert a piece in the way of king and attacker
         if (Utils.getPieceName(this.BoardConfig[attacker].piece) !== "knight") {
-          const [x0, y0] = Utils.getCoordinates(kingPos);
-          const [x1, y1] = Utils.getCoordinates(attacker);
+          const [x0, y0] = Utils.getCoordinates(kingPos); // [4, 7]
+          const [x1, y1] = Utils.getCoordinates(attacker); // [7, 4]
           const available = new Array<number>();
           if (y1 - y0 === x1 - x0) {
             // diagonal
             for (let p = Math.min(x0, x1) + 1; p <= Math.max(x0, x1) - 1; p++) {
               available.push(Utils.getIndex(p, p + y0 - x0));
             }
+          } else if (y1 - y0 == x0 - x1) {
+            // diagonal
+            for (let p = Math.min(x0, x1) + 1; p <= Math.max(x0, x1) - 1; p++) {
+              available.push(Utils.getIndex(p, -p + y0 + x0));
+            }
           } else if (x0 == x1) {
             // row-wise
             for (let y = Math.min(y0, y1) + 1; y <= Math.max(y0, y1) - 1; y++) {
               available.push(Utils.getIndex(x0, y));
             }
-          } else {
+          } else if (y0 === y1) {
             // col-wise
             for (let x = Math.min(x0, x1) + 1; x <= Math.max(x0, x1) - 1; x++) {
               available.push(Utils.getIndex(x, y0));
