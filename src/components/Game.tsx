@@ -177,24 +177,40 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
           <Alert.Heading>Welcome to the game </Alert.Heading>
         </Alert>
 
-
         <div className="game-data">
           <div className="currentTurn">
             <Badge variant="light">
-              {`${currentTurn === "white" ? player0 : player1}'s turn`}
+              {`${currentTurn === playerColor ? `Your turn` : `${currentTurn === "white" ? player0 : player1}'s turn`}`}
             </Badge>
           </div>
           <div className="game-end-buttons">
-            <Button className="btn" disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
+            <Button
+              className="btn"
+              disabled={playerColor !== currentTurn}
+              variant="success"
+              size="lg"
+              onClick={handleDraw}
+            >
               Offer Draw
             </Button>
-            <Button className="btn" disabled={playerColor !== currentTurn} variant="danger" size="lg" onClick={handleResign}>
+            <Button
+              className="btn"
+              disabled={playerColor !== currentTurn}
+              variant="danger"
+              size="lg"
+              onClick={handleResign}
+            >
               Resign
             </Button>
           </div>
           <div className="game-meta-data">
             <div className="score">
-              <Card bg="dark" text="light" className="score-section" border={currentTurn === "white" ? "none" : "light"}>
+              <Card
+                bg="dark"
+                text="light"
+                className="score-section"
+                border={currentTurn === "white" ? "none" : "light"}
+              >
                 <Card.Header>
                   <Card.Title>{player1}</Card.Title>
                 </Card.Header>

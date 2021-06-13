@@ -1,10 +1,18 @@
+// This component is currently not used in the game
+
 import React, { useEffect } from "react";
 
 export interface TimerProps {
-  timePeriod: number;
-  setTimePeriod: any;
-  paused: boolean;
+  timePeriod: number; /** The period of the timer */
+  setTimePeriod: React.Dispatch<React.SetStateAction<number>>; /** Callback to update the above state */
+  paused: boolean; /** State representing if the timer is paused */
 }
+
+/**
+ * Displays the time left for each player
+ * @param {TimerProps} props Props passed by the `Game` component
+ * @returns {React.ReactElement} The Timer React element
+ */
 
 const Timer: React.FC<TimerProps> = (props) => {
   const { timePeriod, setTimePeriod, paused } = props;

@@ -95,6 +95,13 @@ io.on("connection", (socket) => {
     io.of("/").to(data.gameCode).emit("set-player-name", data);
   });
 
+  socket.on("getColor", (data) => {
+    const meta = socketPlayerMapping.get(data.id);
+    data = { ...data, color: meta.color, name: meta.name, position: meta.position };
+    console.log(data);
+    io.of("/").to(data.gameCode).emit("setPlayerColor", data);
+  });
+
   socket.on("perform-move", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("nextTurn", data);
@@ -125,6 +132,11 @@ io.on("connection", (socket) => {
     io.of("/").to(data.gameCode).emit("unmarkCheck", data);
   });
 
+  socket.on("propose-draw", (data) => {
+    data = { ...data, socket: socket.id };
+    io.of("/").to(data.gameCode).emit("proposeDraw", data);
+  });
+
   socket.on("game-complete", (data) => {
     data = { ...data, socket: socket.id };
     io.of("/").to(data.gameCode).emit("gameComplete", data);
@@ -141,18 +153,6 @@ io.on("connection", (socket) => {
     const key = `/${date_key}-${data.gameCode}`;
     console.log(key, gameData);
     Firebase.database().ref(key).set(gameData);
-  });
-
-  socket.on("propose-draw", (data) => {
-    data = { ...data, socket: socket.id };
-    io.of("/").to(data.gameCode).emit("proposeDraw", data);
-  });
-
-  socket.on("getColor", (data) => {
-    const meta = socketPlayerMapping.get(data.id);
-    data = { ...data, color: meta.color, name: meta.name, position: meta.position };
-    console.log(data);
-    io.of("/").to(data.gameCode).emit("setPlayerColor", data);
   });
 
   socket.on("disconnect", () => {

@@ -8,16 +8,17 @@ import Piece, { PieceProps } from "../core/Piece";
 
 import "../styles.css";
 
-export interface PromotionModalProps {
-  show: boolean;
-  setShow: any;
-  socket: Socket<DefaultEventsMap, DefaultEventsMap>;
-  promotionType: string;
-  fromPos: number;
-  toPos: number;
-  gameCode: string;
+export interface PawnPromotionModalProps {
+  show: boolean /** Display the Pawn Promotion Modal or not */;
+  setShow: React.Dispatch<React.SetStateAction<string>> /** Callback to set the above state */;
+  socket: Socket<DefaultEventsMap, DefaultEventsMap> /** The socket on which the player is connected */;
+  promotionType: string /** white-promotion or black-promotion */;
+  fromPos: number /** Current position of pawn */;
+  toPos: number /** Position of pawn after promotion */;
+  gameCode: string /** The gameCode for the current Game */;
 }
 
+/** Styles for pieces displayed for white pawn promotion */
 const whiteButtonStyles = {
   backgroundColor: "#36312b",
   color: "white",
@@ -27,6 +28,7 @@ const whiteButtonStyles = {
   borderRadius: "2vmin",
 };
 
+/** Styles for pieces displayed for black pawn promotion */
 const blackButtonStyles = {
   backgroundColor: "white",
   color: "#36312b",
@@ -42,7 +44,7 @@ const blackButtonStyles = {
  * @returns {React.ReactElement} React component
  */
 
-const PromotionModal: React.FC<PromotionModalProps> = (props) => {
+const PawnPromotionModal: React.FC<PawnPromotionModalProps> = (props) => {
   const { show, setShow, socket, promotionType, fromPos, toPos, gameCode } = props;
 
   const pieceType: string = promotionType.split("-")[0] + "-piece";
@@ -124,4 +126,4 @@ const PromotionModal: React.FC<PromotionModalProps> = (props) => {
   );
 };
 
-export default PromotionModal;
+export default PawnPromotionModal;

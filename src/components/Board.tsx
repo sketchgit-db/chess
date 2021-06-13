@@ -7,7 +7,7 @@ import { DefaultEventsMap } from "socket.io-client/build/typed-events";
 import Square from "./Square";
 import Rank from "./Rank";
 import File from "./File";
-import PromotionModal from "./PromotionModal";
+import PawnPromotionModal from "./PawnPromotionModal";
 
 import PieceDetails from "../core/PieceDetails";
 import Piece, { PieceProps } from "../core/Piece";
@@ -101,10 +101,10 @@ const Board: React.FC<BoardProps> = (props) => {
   } = props;
 
   /**
-   * Returns an object of type `BoardProps` for a given piece
+   * Returns an object of type `BoardStatusProps` for a given piece
    * @param {number} index The index of current piece
    * @param {PieceProps} _piece The current Piece
-   * @returns {Object} The `BoardProps` type object
+   * @returns {BoardStatusProps} The `BoardStatusProps` type object
    */
 
   const updateBoardConfig = (index: number, _piece: PieceProps) => {
@@ -360,6 +360,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * @param {number} moveType 0 - Normal move, 1 - capture, 2 - castling
    * @param {boolean} isCheck Whether the opponent king was given a check
    * @param {boolean} isCheckMate Whether the opponent king was checkmate
+   * @returns {string} `moveRep` - The current move
    */
 
   const getMoveRepresentation = (
@@ -564,7 +565,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * Perform the move (simple move (or) capture)
    * @param {PieceProps} from The piece attempting to move
    * @param {PieceProps} to The cell to which the move attempt is made
-   * @returns {number} 0 - Normal move, 1 - capture, 2 - castling, 3 - promotion
+   * @returns {number} One of the move types from the enum `MoveTypes`
    */
 
   const makeMove = (from: PieceProps, to: PieceProps): number => {
@@ -594,6 +595,13 @@ const Board: React.FC<BoardProps> = (props) => {
     const index = piece.position;
     return piece.position !== clickedPiece.position && BoardConfig[index].color === "selected";
   };
+
+  /**
+   * Checks the status of game (in check, in checkmate, in stalemate) after toPiece has moved from fromPiece's position
+   * @param {PieceProps} fromPiece The new piece at the original position after the move
+   * @param {PieceProps} toPiece The piece after the move at its new position
+   * @param {number} moveType One of the move types from the enum `MoveTypes`
+   */
 
   const getCheckStatus = (fromPiece: PieceProps, toPiece: PieceProps, moveType: number) => {
     const color = utils.getPieceColor(toPiece);
@@ -694,7 +702,7 @@ const Board: React.FC<BoardProps> = (props) => {
           </Button>
         </Modal.Footer>
       </Modal>
-      <PromotionModal
+      <PawnPromotionModal
         show={pawnPromotionType !== ""}
         setShow={setPawnPromotionType}
         socket={socket}

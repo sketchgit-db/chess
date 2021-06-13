@@ -243,14 +243,14 @@ const Home: React.FC<HomeProps> = (props) => {
                 </li>
               </ul>
             </ol>
+            <ul>
+              The player creating the game starts with <b>White Piece</b>
+            </ul>
           </Alert>
         </div>
         <div>
-          <Alert variant="warning" style={{fontSize: "20px", userSelect: "none"}}>
-            Source code @ {" "}
-            <Alert.Link href="https://github.com/07kshitij/chess">
-              07kshitij/chess
-            </Alert.Link>
+          <Alert variant="warning" style={{ fontSize: "20px", userSelect: "none" }}>
+            Source code @ <Alert.Link href="https://github.com/07kshitij/chess">07kshitij/chess</Alert.Link>
           </Alert>
         </div>
       </div>

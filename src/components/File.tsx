@@ -1,8 +1,14 @@
 import React from "react";
 
 export interface FileProps {
-  side: number;
+  side: number /** The side on which the files are displayed, top or bottom */;
 }
+
+/**
+ * Returns the list of files, 'a' to 'h', displayed on the board
+ * @param {FileProps} props The props passed by the Board component
+ * @returns {React.ReactElement} React component
+ */
 
 const File: React.FC<FileProps> = (props) => {
   const { side } = props;

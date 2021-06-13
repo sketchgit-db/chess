@@ -3,15 +3,15 @@ import { BoardStatusProps } from "../components/Board";
 import * as Utils from "../utils/helpers";
 
 interface CheckProps {
-  selfKingPos: number;
-  oppKingPos: number;
-  selfPossibleMoves: number[];
-  oppPossibleMoves: number[];
-  attackingPieces: number[];
+  selfKingPos: number /** Position of king of the attacking piece */;
+  oppKingPos: number /** Position of king of the opponent type */;
+  selfPossibleMoves: number[] /** Possible moves for self king */;
+  oppPossibleMoves: number[] /** Possible moves for the opponent's king */;
+  attackingPieces: number[] /** List of pieces giving check to the opponent king */;
 }
 
 enum MoveType {
-  ANY = 0,
+  ANY = 0 /** Normal move or Capture */,
   CAPTURE = 1,
 }
 
@@ -152,11 +152,20 @@ class Moves {
     return validMoves;
   };
 
+  /**
+   * TODO
+   * Removes all moves which cause immediate check to the `piece`'s king
+   * @param {PieceProps} piece The piece under consideration
+   * @param {number[]} moves The list of all possible moves for `piece`
+   * @returns 
+   */
+
   public removeIllegalMoves(piece: PieceProps, moves: number[]) {
     return moves;
   }
 
   /**
+   * TODO
    * Determine if the king opposite to `piece` is in stalemate
    * @param {string} attackerColor
    * @returns {boolean} The status of the stalemate
@@ -172,7 +181,7 @@ class Moves {
         }
       }
     }
-    return true;
+    return false;
   }
 
   /**
@@ -577,6 +586,14 @@ class Moves {
     return moves;
   }
 
+  /**
+   * Checks if the empty cell at `position` is under attack by opponent piece or not
+   * This function is specific to castling
+   * @param {number} position The position of the empty cell
+   * @param {string} attackerColor The color of the opponent piece
+   * @returns {boolean} true if the cell is safe from an immediate attack, false otherwise
+   */
+
   private isSafe(position: number, attackerColor: string): boolean {
     let safe = true;
     for (let index = 0; index < 64; index++) {
@@ -591,6 +608,13 @@ class Moves {
     }
     return safe;
   }
+
+  /**
+   * Checks if castling move is possible for king at `fromPos` and rook at `toPos`
+   * @param {number} fromPos 
+   * @param {number} toPos 
+   * @returns {boolean} true if castling is possible, false otherwise
+   */
 
   public isCastlePossible(fromPos: number, toPos: number): boolean {
     let isPossible = true;
@@ -637,7 +661,7 @@ class Moves {
   /**
    * Get the possible castling moves
    * @param {PieceProps} kingPiece The king piece for whom possible castling moves are to be found
-   * @returns The possible castling moves
+   * @returns {number[]} The possible castling moves
    */
 
   public getCastlingMoves(kingPiece: PieceProps): Array<number> {

@@ -1,8 +1,14 @@
 import React from "react";
 
 export interface RankProps {
-  side: number;
+  side: number /** The side on which the ranks are displayed, left or right */;
 }
+
+/**
+ * Returns the list of ranks, 1 to 8, displayed on the board
+ * @param {RankProps} props The props passed by the Board component
+ * @returns {React.ReactElement} React component
+ */
 
 const Rank: React.FC<RankProps> = (props) => {
   const { side } = props;
