@@ -47,9 +47,7 @@ class Hints extends Moves {
 
   public hideHints = (hintCells: Array<number>) => {
     hintCells.forEach((index) => {
-      this.BoardConfig[index].setColor(
-        Math.floor(index / 8 + index) % 2 ? "black" : "white"
-      );
+      this.BoardConfig[index].setColor(Math.floor(index / 8 + index) % 2 ? "black" : "white");
     });
   };
 }

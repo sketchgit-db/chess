@@ -152,6 +152,29 @@ class Moves {
     return validMoves;
   };
 
+  public removeIllegalMoves(piece: PieceProps, moves: number[]) {
+    return moves;
+  }
+
+  /**
+   * Determine if the king opposite to `piece` is in stalemate
+   * @param {string} attackerColor
+   * @returns {boolean} The status of the stalemate
+   */
+
+  public isStaleMate(attackerColor: string): boolean {
+    for (let index = 0; index < 64; index++) {
+      if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
+        continue;
+      } else if (Utils.getPieceColor(this.BoardConfig[index].piece) !== attackerColor) {
+        if (this.showValidMoves(this.BoardConfig[index].piece).length > 0) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
   /**
    * Check if a move by king at `pos0` to `pos1` doesn't cause it check
    * @param {number} pos0 The starting position of the king
@@ -160,40 +183,35 @@ class Moves {
    * @returns {boolean} Whether the move from pos0 to pos1 is safe
    */
 
-  public checkAttackSafety(pos0: number, pos1: number, attackerColor: string): boolean {
+  public checkMoveSafety(pos0: number, pos1: number, attackerColor: string): boolean {
     // king tries to capture
-    const [oldKingPos, oldKingType, oldKingName] = [
-      pos0,
-      this.BoardConfig[pos0].piece.type,
-      this.BoardConfig[pos0].piece.pieceName,
-    ];
-    const [oldCapPos, oldCapType, oldCapName] = [
-      pos1,
-      this.BoardConfig[pos1].piece.type,
-      this.BoardConfig[pos1].piece.pieceName,
-    ];
+    const [oldKingType, oldKingName] = [this.BoardConfig[pos0].piece.type, this.BoardConfig[pos0].piece.pieceName];
+    const [oldCapType, oldCapName] = [this.BoardConfig[pos1].piece.type, this.BoardConfig[pos1].piece.pieceName];
     // attack by king at pos0 to piece at pos1
-    this.BoardConfig[pos0].piece.position = oldCapPos;
     this.BoardConfig[pos0].piece.type = "empty-cell";
     this.BoardConfig[pos0].piece.pieceName = null;
 
-    this.BoardConfig[pos1].piece.position = oldKingPos;
     this.BoardConfig[pos1].piece.type = oldKingType;
     this.BoardConfig[pos1].piece.pieceName = oldKingName;
 
     const outVal = this.isCheck(attackerColor);
 
     // undo the move
-    this.BoardConfig[pos1].piece.position = oldCapPos;
-    this.BoardConfig[pos1].piece.type = oldCapType;
-    this.BoardConfig[pos1].piece.pieceName = oldCapName;
-
-    this.BoardConfig[pos0].piece.position = oldKingPos;
     this.BoardConfig[pos0].piece.type = oldKingType;
     this.BoardConfig[pos0].piece.pieceName = oldKingName;
 
+    this.BoardConfig[pos1].piece.type = oldCapType;
+    this.BoardConfig[pos1].piece.pieceName = oldCapName;
+
     return outVal.attackingPieces.length == 0;
   }
+
+  /**
+   * Check if the king with `validKingMoves` can move given the opponent's `oppMoves`
+   * @param {number[]} validKingMoves
+   * @param {number[]} oppMoves
+   * @returns {boolean} Whether there exists a cell to which the king can move
+   */
 
   public canKingMove(validKingMoves: number[], oppMoves: number[]): boolean {
     for (let pos = 0; pos < validKingMoves.length; pos++) {
@@ -205,7 +223,7 @@ class Moves {
       } else {
         // capture by king
         const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
-        if (this.checkAttackSafety(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
+        if (this.checkMoveSafety(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
           return true;
         }
       }
@@ -239,7 +257,7 @@ class Moves {
         return false;
       } else if (
         validKingMoves.includes(attacker) &&
-        this.checkAttackSafety(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))
+        this.checkMoveSafety(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))
       ) {
         // capture by king
         return false;
@@ -286,8 +304,8 @@ class Moves {
 
   /**
    * Determine if the king opposite to `piece` is in check by any pieces of the color of `piece`
-   * @param {PieceProps} piece
-   * @returns {[boolean, number, number, Array<number>]} The position of the king in check (if any, else -1)
+   * @param {string} attackerColor
+   * @returns {CheckProps} The status of the king in check, along with valid moves of each piece type
    */
 
   public isCheck(attackerColor: string): CheckProps {

@@ -10,7 +10,7 @@ import File from "./File";
 import PromotionModal from "./PromotionModal";
 
 import PieceDetails from "../core/PieceDetails";
-import { PieceProps } from "../core/Piece";
+import Piece, { PieceProps } from "../core/Piece";
 import Hints from "../utils/Hints";
 import * as utils from "../utils/helpers";
 
@@ -201,12 +201,12 @@ const Board: React.FC<BoardProps> = (props) => {
     socket.once("updateMoveTable", (data) => {
       console.log("+++ updateMoveTable +++", data);
       setGameMoves((gameMoves) => [...gameMoves, data.move]);
-      if (data.checkmate) {
+      if (data.checkmate || data.stalemate) {
         socket.emit("game-complete", {
           result: data.result,
           gameCode: gameCode,
           gameMoves: [...gameMoves, data.move],
-        });  
+        });
       }
     });
   }, [gameMoves]);
@@ -400,7 +400,7 @@ const Board: React.FC<BoardProps> = (props) => {
    * @returns {boolean} Whether the king at `kingPos` is checkmate by the opponent
    */
 
-  const isCheckMate = (piece: PieceProps, kingPos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) => {
+  const isCheckMate = (kingPos: number, oppMoves: number[], selfMoves: number[], attacks: number[]) => {
     const moves = new Hints(BoardConfig);
     const ischeckMate = moves.isCheckMate(kingPos, oppMoves, selfMoves, attacks);
     return ischeckMate;
@@ -422,7 +422,6 @@ const Board: React.FC<BoardProps> = (props) => {
         color: "check",
       });
       const ischeckMate = isCheckMate(
-        piece,
         outVal.oppKingPos,
         outVal.selfPossibleMoves,
         outVal.oppPossibleMoves,
@@ -439,6 +438,11 @@ const Board: React.FC<BoardProps> = (props) => {
       }
       return [false, false];
     }
+  };
+
+  const isStalemate = (piece: PieceProps) => {
+    const moves = new Hints(BoardConfig);
+    return moves.isStaleMate(utils.getPieceColor(piece));
   };
 
   /**
@@ -600,6 +604,7 @@ const Board: React.FC<BoardProps> = (props) => {
     let result: Result = { outcome: "", message: "" };
 
     const [ischeck, ischeckmate] = isCheck(toPiece);
+    const isstalemate = isStalemate(toPiece);
     const lastMove = getMoveRepresentation(fromPiece, toPiece, moveType, ischeck, ischeckmate);
 
     if (ischeckmate) {
@@ -611,15 +616,9 @@ const Board: React.FC<BoardProps> = (props) => {
       move: lastMove,
       gameCode: gameCode,
       result: result,
-      checkmate: ischeckmate
+      checkmate: ischeckmate,
+      stalemate: isstalemate,
     });
-    // if (ischeckmate) {
-    //   socket.emit("game-complete", {
-    //     result: result,
-    //     gameCode: gameCode,
-    //     gameMoves: gameMoves,
-    //   });
-    // }
   };
 
   /**

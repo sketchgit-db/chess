@@ -1,11 +1,17 @@
 .home-container {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-direction: row;
+  justify-content: space-evenly;
   align-items: center;
-  padding: 20px;
   width: 100%;
-  height: 60vh;
+  height: 100%;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
 }
 
 ul {
@@ -21,27 +27,35 @@ ul {
 }
 
 .instructions {
-  margin: 20px;
-  display: flex;
+  margin-top: 20vh;
+  width: 80vw;  
   max-width: 550px;
-  flex-direction: column;
   user-select: none;
   font-size: 20px;
+}
+
+@media screen and (max-width: 1200px) {
+  .home-container {
+    flex-direction: column;
+  }
+  .instructions {
+    margin-top: 5vmin;
+  }
 }
 
 @media screen and (max-width: 550px) {
   .instructions {
     font-size: 15px;
     max-width: 80vw;
+    margin-top: 5vmin;
   }
   .game-input {
     width: 80vw;
+    font-size: 15px;
   }
 }
 
 .outline-1 {
-  width: 93vmin;
-  height: 93vmin;
   background-color: black;
   display: flex;
   flex-direction: column;
@@ -49,8 +63,6 @@ ul {
 }
 
 .outline-2 {
-  width: 93vmin;
-  height: 88vmin;
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -188,20 +200,19 @@ ul {
 .game {
   padding: 10px 20px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   flex-direction: row;
 }
 
 .board-panel {
-  width: 50%;
-  padding-top: 2vmin;
+  padding: 2vmin;
   text-align: center;
 }
 
 .score-panel {
-  width: 50%;
-  padding-top: 2vmin;
+  padding: 2vmin;
   text-align: center;
+  width: 100%;
 }
 
 .game-data {
@@ -212,14 +223,15 @@ ul {
   background-color:#fabc4f;
   border-radius: 10px;
   border: 1px solid #a95517;
+  max-height: 80vmin;
 }
 
 .score {
   width: 100%;
   margin-top: 10vmin;
   display: flex;
-  flex-direction: row;
-  justify-content: space-around;
+  flex-direction: column;
+  justify-content: space-between;
   user-select: none;
 }
 
@@ -229,17 +241,25 @@ ul {
   font-size: 20px;
 }
 
+.game-meta-data {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
 .moves-panel-outline {
   margin-top: 10vmin;
   user-select: none;
+  width: 100%;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
 }
 
 .moves-panel {
-  width: 50%;
+  width: 100%;
   font-size: 2.5vmin;
+  height: fit-content;
 }
 
 .moves-list {
@@ -247,8 +267,8 @@ ul {
   display: flex;
   flex-direction: column-reverse;
   justify-content: start;
-  max-height: 25vmin;
   overflow-y: auto;
+  max-height: 30vmin;
 }
 
 .moves-list .odd {
@@ -273,13 +293,19 @@ ul {
   text-align: left;
 }
 
-@media screen and (max-width: 1500px) {
+@media screen and (max-width: 1200px) {
   .game {
     flex-direction: column;
+    justify-content: space-between;
   }
+
+  .game-data {
+    max-height: none;
+  }
+
   .board-panel {
     width: 100%;
-    padding-top: 2vmin;
+    padding: 2vmin;
     text-align: center;
     display: flex;
     justify-content: center;
@@ -287,14 +313,23 @@ ul {
 
   .score-panel {
     width: 100%;
-    padding-top: 2vmin;
+    padding: 2vmin;
     text-align: center;
+    max-height: 100%;
   }
 
   .moves-panel {
     width: 100%;
-    font-size: 15px;
+    font-size: 4vmin;
   }  
+
+  .score-section {
+    font-size: 4vmin;
+  }
+
+  .game-end-buttons .btn {
+    font-size: 4vmin;
+  }
 }
 
 .timer {
@@ -310,6 +345,7 @@ ul {
   justify-content: space-evenly;
   margin-top: 20px;
   padding: 10px;
+  font-size: 20px;
 }
 
 .currentTurn {

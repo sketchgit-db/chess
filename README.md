@@ -4,7 +4,10 @@ _Currently in Development_
 
 A `TypeScript` and `WebSockets` based implementation of the game of chess
 
-_Note - A `Firebase RealTime Database` stores moves and result of each completed game (For analysis purposes)_ 
+Note
+  - A `Firebase RealTime Database` stores the **moves** and **result** of each **completed game**
+  - The above data is collected solely for the purpose of analysis and ensuring robustness of the game
+  - No other user data (such as name of the player, cookies etc.) are collected by the application
 
 ## Access on the web
 

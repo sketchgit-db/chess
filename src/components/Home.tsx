@@ -29,6 +29,7 @@ const Home: React.FC<HomeProps> = (props) => {
   const [waitingMessage, setWaitingMessage] = React.useState("");
   const [wrongCodeMessage, setWrongCodeMessage] = React.useState("");
   const [playerName, setPlayerName] = React.useState("");
+  const [allowInput, setAllowInput] = React.useState(true);
   const { socket } = props;
 
   /**
@@ -45,12 +46,13 @@ const Home: React.FC<HomeProps> = (props) => {
    */
   const showCreateGameModal = () => {
     setCreateGame(true);
-    setGameCode(GenerateCode(GAME_CODE_LENGTH));
   };
 
   const hideCreateGameModal = () => {
     setCreateGame(false);
     setWaitingMessage("");
+    setAllowInput(true);
+    setGameCode("");
   };
 
   const showJoinGameModal = () => setJoinGame(true);
@@ -76,8 +78,11 @@ const Home: React.FC<HomeProps> = (props) => {
    * Routes the current window to the game window
    */
   const handleCreateGame = () => {
+    const code = GenerateCode(GAME_CODE_LENGTH);
+    setGameCode(code);
+    setAllowInput(false);
     socket.emit("createGame", {
-      gameCode: gameCode,
+      gameCode: code,
       name: playerName,
       position: 0,
     });
@@ -131,16 +136,17 @@ const Home: React.FC<HomeProps> = (props) => {
             <Modal.Body>
               <InputGroup className="mb-3">
                 <InputGroup.Prepend>
-                  <InputGroup.Text id="basic-addon1">#</InputGroup.Text>
+                  <InputGroup.Text id="basic-addon1">@</InputGroup.Text>
                 </InputGroup.Prepend>
                 <FormControl
+                  disabled={!allowInput}
                   placeholder="Enter your Name"
                   aria-label="Enter your Name"
                   onChange={handleSetName}
                   type="text"
                 />
               </InputGroup>
-              <Alert variant="success">
+              <Alert show={gameCode !== ""} variant="success">
                 {" "}
                 Your Game Code is <b>{gameCode}</b>
               </Alert>
@@ -174,7 +180,7 @@ const Home: React.FC<HomeProps> = (props) => {
             <Modal.Body>
               <InputGroup className="mb-3">
                 <InputGroup.Prepend>
-                  <InputGroup.Text id="basic-addon1">#</InputGroup.Text>
+                  <InputGroup.Text id="basic-addon1">@</InputGroup.Text>
                 </InputGroup.Prepend>
                 <FormControl
                   placeholder="Enter your Name"
@@ -188,6 +194,7 @@ const Home: React.FC<HomeProps> = (props) => {
                   <InputGroup.Text id="basic-addon1">#</InputGroup.Text>
                 </InputGroup.Prepend>
                 <FormControl
+                  required={true}
                   placeholder="Enter Game Code"
                   aria-label="Enter Game Code"
                   onChange={handleSetGameCode}
@@ -210,35 +217,43 @@ const Home: React.FC<HomeProps> = (props) => {
           </Modal>
         </Card.Body>
       </Card>
-      <Alert className="instructions" variant="info">
-        <Alert.Heading style={{ textAlign: "center" }}>How to Play?</Alert.Heading>
-        <ol>
-          <li>
-            To start a new game, click <b>Create a new game</b>
-          </li>
-          <ul>
-            <li>
-              Enter your name in the Input Box
-            </li>
-            <li>
-              Copy the displayed Game Code, share it with your opponent and click <b>Start Game</b>
-            </li>
-            <li>The game starts once your opponent enters the code</li>
-          </ul>
-          <li>
-            To join an existing game, request the Game Code from your opponent {"& "}
-            click <b>Join an existing game</b>
-          </li>
-          <ul>
-            <li>
-              Enter your name in the Input Box
-            </li>
-            <li>
-              Enter the code and click <b>Start Game</b>
-            </li>
-          </ul>
-        </ol>
-      </Alert>
+      <div className="meta">
+        <div className="instructions">
+          <Alert variant="info">
+            <Alert.Heading style={{ textAlign: "center" }}>How to Play?</Alert.Heading>
+            <ol>
+              <li>
+                To start a new game, click <b>Create a new game</b>
+              </li>
+              <ul>
+                <li>
+                  Enter your name and click <b>Start Game</b>
+                </li>
+                <li>Share the displayed Game Code with your opponent</li>
+                <li>The game starts once your opponent enters the code</li>
+              </ul>
+              <li>
+                To join an existing game, request the Game Code from your opponent {"& "}
+                click <b>Join an existing game</b>
+              </li>
+              <ul>
+                <li>Enter your name in the Input Box</li>
+                <li>
+                  Enter the code and click <b>Start Game</b>
+                </li>
+              </ul>
+            </ol>
+          </Alert>
+        </div>
+        <div>
+          <Alert variant="warning" style={{fontSize: "20px", userSelect: "none"}}>
+            Source code @ {" "}
+            <Alert.Link href="https://github.com/07kshitij/chess">
+              07kshitij/chess
+            </Alert.Link>
+          </Alert>
+        </div>
+      </div>
     </div>
   );
 };

@@ -177,52 +177,53 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
           <Alert.Heading>Welcome to the game </Alert.Heading>
         </Alert>
 
+
         <div className="game-data">
+          <div className="currentTurn">
+            <Badge variant="light">
+              {`${currentTurn === "white" ? player0 : player1}'s turn`}
+            </Badge>
+          </div>
           <div className="game-end-buttons">
-            <div className="currentTurn">
-              <Badge variant="light">
-                {`${currentTurn === "white" ? player0 : player1}'s turn`}
-              </Badge>
-            </div>
-            <Button disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
+            <Button className="btn" disabled={playerColor !== currentTurn} variant="success" size="lg" onClick={handleDraw}>
               Offer Draw
             </Button>
-            <Button disabled={playerColor !== currentTurn} variant="danger" size="lg" onClick={handleResign}>
+            <Button className="btn" disabled={playerColor !== currentTurn} variant="danger" size="lg" onClick={handleResign}>
               Resign
             </Button>
           </div>
-          <div className="score">
-            <Card bg="dark" text="light" className="score-section" border={currentTurn === "white" ? "none" : "light"}>
-              <Card.Header>
-                <Card.Title>{player1}</Card.Title>
-              </Card.Header>
-              <Card.Body>
-                <Card.Text>{`${blackPoints}`}</Card.Text>
-              </Card.Body>
-              {/* <Timer timePeriod={blackTimePeriod} setTimePeriod={setBlackTimePeriod} paused={currentTurn === "white"} /> */}
-            </Card>
-            <Card className="score-section" border={currentTurn === "white" ? "dark" : "none"}>
-              <Card.Header>
-                <Card.Title>{player0}</Card.Title>
-              </Card.Header>
-              <Card.Body>
-                <Card.Text>{`${whitePoints}`}</Card.Text>
-              </Card.Body>
-              {/* <Timer timePeriod={whiteTimePeriod} setTimePeriod={setWhiteTimePeriod} paused={currentTurn === "black"} /> */}
-            </Card>
+          <div className="game-meta-data">
+            <div className="score">
+              <Card bg="dark" text="light" className="score-section" border={currentTurn === "white" ? "none" : "light"}>
+                <Card.Header>
+                  <Card.Title>{player1}</Card.Title>
+                </Card.Header>
+                <Card.Body>
+                  <Card.Text>{`${blackPoints}`}</Card.Text>
+                </Card.Body>
+                {/* <Timer timePeriod={blackTimePeriod} setTimePeriod={setBlackTimePeriod} paused={currentTurn === "white"} /> */}
+              </Card>
+              <Card className="score-section" border={currentTurn === "white" ? "dark" : "none"}>
+                <Card.Header>
+                  <Card.Title>{player0}</Card.Title>
+                </Card.Header>
+                <Card.Body>
+                  <Card.Text>{`${whitePoints}`}</Card.Text>
+                </Card.Body>
+                {/* <Timer timePeriod={whiteTimePeriod} setTimePeriod={setWhiteTimePeriod} paused={currentTurn === "black"} /> */}
+              </Card>
+            </div>
+            <div className="moves-panel-outline">
+              <Card className="moves-panel" border="dark">
+                <Card.Header>
+                  <Card.Title>Moves</Card.Title>
+                </Card.Header>
+                <div className="moves-list">
+                  <div style={{ width: "100%" }}>{getMoves()}</div>
+                </div>
+              </Card>
+            </div>
           </div>
-
-          <div className="moves-panel-outline">
-            <Card className="moves-panel" border="dark">
-              <Card.Header>
-                <Card.Title>Moves</Card.Title>
-              </Card.Header>
-              <div className="moves-list">
-                <div style={{ width: "100%" }}>{getMoves()}</div>
-              </div>
-            </Card>
-          </div>
-
           <Modal show={showDrawRequest}>
             <Modal.Header>
               <Modal.Title>{`${currentTurn} offered a draw`}</Modal.Title>
