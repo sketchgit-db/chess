@@ -65,3 +65,13 @@ export const getPieceName = (piece: PieceProps) => {
     return piece.pieceName.split("-")[1];
   }
 };
+
+/**
+ * Get the color of a opponent piecetype of `piece`
+ * @param {PieceProps} piece
+ * @returns {string} The color of the opponent piecetype, 'white' (or) 'black'
+ */
+
+export const opponentColor = (piece: PieceProps): string => {
+  return (getPieceColor(piece) === "white" ? "black" : "white");
+}

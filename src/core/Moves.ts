@@ -121,7 +121,7 @@ class Moves {
    * @returns {Array<number>} An array containing the valid Moves
    */
 
-  protected showValidMoves = (piece: PieceProps, moveType: MoveType = MoveType.ANY): Array<number> => {
+  protected getMoves = (piece: PieceProps, moveType: MoveType = MoveType.ANY): Array<number> => {
     const index = piece.position;
     const pieceName = Utils.getPieceName(piece);
     let validMoves: Array<number> = new Array<number>();
@@ -157,10 +157,18 @@ class Moves {
    * Removes all moves which cause immediate check to the `piece`'s king
    * @param {PieceProps} piece The piece under consideration
    * @param {number[]} moves The list of all possible moves for `piece`
-   * @returns 
+   * @returns
    */
 
-  public removeIllegalMoves(piece: PieceProps, moves: number[]) {
+  public removeInValidMoves(piece: PieceProps, moves: number[]) {
+    const from = piece.position;
+    const attackerColor = Utils.opponentColor(piece);
+    let validMoves = [];
+    moves.forEach((to) => {
+      if(this.checkMoveSafety(from, to, attackerColor)) {
+        validMoves.push(to);
+      }
+    });
     return moves;
   }
 
@@ -176,7 +184,11 @@ class Moves {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
       } else if (Utils.getPieceColor(this.BoardConfig[index].piece) !== attackerColor) {
-        if (this.showValidMoves(this.BoardConfig[index].piece).length > 0) {
+        const moves = this.removeInValidMoves(
+          this.BoardConfig[index].piece,
+          this.getMoves(this.BoardConfig[index].piece)
+        );
+        if (moves.length > 0) {
           return false;
         }
       }
@@ -185,32 +197,33 @@ class Moves {
   }
 
   /**
-   * Check if a move by king at `pos0` to `pos1` doesn't cause it check
-   * @param {number} pos0 The starting position of the king
-   * @param {number} pos1 The destination of the king
-   * @param {string} attackerColor The color of the piece opposite to the king
-   * @returns {boolean} Whether the move from pos0 to pos1 is safe
+   * Check if a move by from `from` to `to` doesn't lead to check by `attackerColor` pieces
+   * @param {number} from The starting position of the moving piece
+   * @param {number} to The destination of the moving piece
+   * @param {string} attackerColor The color of the piece opposite to the moving piece
+   * @returns {boolean} Whether the move from from to to is safe
    */
 
-  public checkMoveSafety(pos0: number, pos1: number, attackerColor: string): boolean {
-    // king tries to capture
-    const [oldKingType, oldKingName] = [this.BoardConfig[pos0].piece.type, this.BoardConfig[pos0].piece.pieceName];
-    const [oldCapType, oldCapName] = [this.BoardConfig[pos1].piece.type, this.BoardConfig[pos1].piece.pieceName];
-    // attack by king at pos0 to piece at pos1
-    this.BoardConfig[pos0].piece.type = "empty-cell";
-    this.BoardConfig[pos0].piece.pieceName = null;
+  public checkMoveSafety(from: number, to: number, attackerColor: string): boolean {
 
-    this.BoardConfig[pos1].piece.type = oldKingType;
-    this.BoardConfig[pos1].piece.pieceName = oldKingName;
+    const [fromType, fromName] = [this.BoardConfig[from].piece.type, this.BoardConfig[from].piece.pieceName];
+    const [toType, toName] = [this.BoardConfig[to].piece.type, this.BoardConfig[to].piece.pieceName];
+
+    // attempt move from from (becomes empty) to to (moving piece)
+    this.BoardConfig[from].piece.type = "empty-cell";
+    this.BoardConfig[from].piece.pieceName = null;
+
+    this.BoardConfig[to].piece.type = fromType;
+    this.BoardConfig[to].piece.pieceName = fromName;
 
     const outVal = this.isCheck(attackerColor);
 
     // undo the move
-    this.BoardConfig[pos0].piece.type = oldKingType;
-    this.BoardConfig[pos0].piece.pieceName = oldKingName;
+    this.BoardConfig[from].piece.type = fromType;
+    this.BoardConfig[from].piece.pieceName = fromName;
 
-    this.BoardConfig[pos1].piece.type = oldCapType;
-    this.BoardConfig[pos1].piece.pieceName = oldCapName;
+    this.BoardConfig[to].piece.type = toType;
+    this.BoardConfig[to].piece.pieceName = toName;
 
     return outVal.attackingPieces.length == 0;
   }
@@ -222,17 +235,19 @@ class Moves {
    * @returns {boolean} Whether there exists a cell to which the king can move
    */
 
-  public canKingMove(validKingMoves: number[], oppMoves: number[]): boolean {
+  public canKingMove(kingPos: number, validKingMoves: number[], oppMoves: number[]): boolean {
     for (let pos = 0; pos < validKingMoves.length; pos++) {
       if (oppMoves.includes(validKingMoves[pos])) {
         continue;
       } else if (Utils.getPieceName(this.BoardConfig[validKingMoves[pos]].piece) === null) {
         // empty cell not under attack => can move
+        // console.log("canKingMove - empty cell", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
         return true;
       } else {
         // capture by king
         const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
-        if (this.checkMoveSafety(pos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
+        if (this.checkMoveSafety(kingPos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
+          // console.log("canKingMove - king capture", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
           return true;
         }
       }
@@ -257,27 +272,29 @@ class Moves {
       if (cannotMove) {
         return true;
       } else {
-        return !this.canKingMove(validKingMoves, oppMoves);
+        return !this.canKingMove(kingPos, validKingMoves, oppMoves);
       }
     } else {
       const attacker = attacks[0];
       if (selfMoves.includes(attacker)) {
+        // console.log("capture by non - king ", attacker, selfMoves);
         // capture the attacking piece by non - king
         return false;
       } else if (
         validKingMoves.includes(attacker) &&
         this.checkMoveSafety(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))
       ) {
+        // console.log("capture by king", validKingMoves, attacker);
         // capture by king
         return false;
-      } else if (this.canKingMove(validKingMoves, oppMoves)) {
+      } else if (this.canKingMove(kingPos, validKingMoves, oppMoves)) {
         // move king to other cell
         return false;
       } else {
         // insert a piece in the way of king and attacker
         if (Utils.getPieceName(this.BoardConfig[attacker].piece) !== "knight") {
-          const [x0, y0] = Utils.getCoordinates(kingPos); // [4, 7]
-          const [x1, y1] = Utils.getCoordinates(attacker); // [7, 4]
+          const [x0, y0] = Utils.getCoordinates(kingPos);
+          const [x1, y1] = Utils.getCoordinates(attacker);
           const available = new Array<number>();
           if (y1 - y0 === x1 - x0) {
             // diagonal
@@ -300,6 +317,7 @@ class Moves {
               available.push(Utils.getIndex(x, y0));
             }
           }
+          // console.log("insert a piece in the way ", selfMoves, available);
           for (let index = 0; index < available.length; index++) {
             if (selfMoves.includes(available[index])) {
               return false;
@@ -331,7 +349,7 @@ class Moves {
         continue;
       } else {
         if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
-          const moves = this.showValidMoves(this.BoardConfig[index].piece, MoveType.CAPTURE);
+          const moves = this.getMoves(this.BoardConfig[index].piece, MoveType.CAPTURE);
           if (Utils.getPieceName(this.BoardConfig[index].piece) === "king") {
             outVal.selfKingPos = index;
           }
@@ -343,7 +361,7 @@ class Moves {
             }
           }
         } else {
-          const moves = this.showValidMoves(this.BoardConfig[index].piece);
+          const moves = this.getMoves(this.BoardConfig[index].piece);
           if (this.BoardConfig[index].piece.pieceName === targetPiece) {
             outVal.oppKingPos = index;
           } else {
@@ -600,7 +618,7 @@ class Moves {
       if (Utils.getPieceName(this.BoardConfig[index].piece) === null) {
         continue;
       } else if (Utils.getPieceColor(this.BoardConfig[index].piece) === attackerColor) {
-        const moves = this.showValidMoves(this.BoardConfig[index].piece);
+        const moves = this.getMoves(this.BoardConfig[index].piece);
         if (moves.includes(position)) {
           return false;
         }
@@ -611,8 +629,8 @@ class Moves {
 
   /**
    * Checks if castling move is possible for king at `fromPos` and rook at `toPos`
-   * @param {number} fromPos 
-   * @param {number} toPos 
+   * @param {number} fromPos
+   * @param {number} toPos
    * @returns {boolean} true if castling is possible, false otherwise
    */
 
@@ -634,8 +652,7 @@ class Moves {
       }
     }
 
-    const kingColor = Utils.getPieceColor(this.BoardConfig[fromPos].piece);
-    const attackerColor = kingColor === "white" ? "black" : "white";
+    const attackerColor = Utils.opponentColor(this.BoardConfig[fromPos].piece);
 
     if (fromPos < toPos) {
       // kingSide

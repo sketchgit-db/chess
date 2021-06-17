@@ -28,7 +28,7 @@ class Hints extends Moves {
 
   public showHints = (piece: PieceProps): Array<number> => {
     if (Utils.getPieceName(piece) !== null) {
-      const validMoves = this.showValidMoves(piece);
+      const validMoves = this.getMoves(piece);
       validMoves.forEach((index) => {
         if (Utils.getPieceName(this.BoardConfig[index].piece) !== "king") {
           this.BoardConfig[index].setColor("selected");
