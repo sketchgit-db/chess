@@ -43,3 +43,7 @@ Please mention the following in your issue
 
 - The `Game Code` of the game for which the bug is reported
 - Screenshot of the game (in case the issue is related to the game interface)
+
+## Known Issues
+
+- The moves list doesn't scroll on [FireFox / Edge](https://github.com/philipwalton/flexbugs/issues/108)

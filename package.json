@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "build": "webpack --mode=production",
-    "start-dev-server": "webpack-dev-server --open --mode development --hot",
-    "start-express-server": "npm run build && nodemon server.js"
+    "dev-server": "webpack-dev-server --open --mode development --hot",
+    "express-server": "npm run build && nodemon server.js"
   },
   "author": "",
   "license": "MIT",

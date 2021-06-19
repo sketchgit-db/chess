@@ -237,7 +237,6 @@ ul {
 
 .score-section {
   width: 30vmin;
-  margin: 2vmin;
   font-size: 20px;
 }
 
@@ -262,13 +261,14 @@ ul {
   height: fit-content;
 }
 
+/* column-reverse is not supported on Edge/IE/Firefox */
 .moves-list {
   align-items: baseline;
   display: flex;
   flex-direction: column-reverse;
   justify-content: start;
-  overflow-y: auto;
   max-height: 30vmin;
+  overflow-y: scroll;
 }
 
 .moves-list .odd {
