@@ -40,10 +40,10 @@ app.get("/", (req, res) => {
 let socketPlayerMapping = new Map();
 
 io.on("connection", (socket) => {
-  console.log(`${socket.id} connected`);
+  // console.log(`${socket.id} connected`);
 
   socket.on("createGame", (data) => {
-    console.log("createGame: " + data.gameCode);
+    // console.log("createGame: " + data.gameCode);
     socket.join(data.gameCode);
     socket.emit("createGameResponse", {
       response: "player joined",
@@ -55,11 +55,11 @@ io.on("connection", (socket) => {
       position: data.position,
       name: data.name,
     });
-    console.log(`createGame: `, io.of("/").adapter.rooms.get(data.gameCode));
+    // console.log(`createGame: `, io.of("/").adapter.rooms.get(data.gameCode));
   });
 
   socket.on("joinGame", (data) => {
-    console.log("joinGame: " + data.gameCode);
+    // console.log("joinGame: " + data.gameCode);
     const room = io.of("/").adapter.rooms.get(data.gameCode);
     if (room && room.size === 1) {
       socket.join(data.gameCode);
@@ -72,21 +72,21 @@ io.on("connection", (socket) => {
         response: "player joined",
         playerId: 1,
       });
-      console.log(socketPlayerMapping);
+      // console.log(socketPlayerMapping);
       io.of("/").to(data.gameCode).emit("start-game", data.gameCode);
-      console.log(`joinGame: `, io.of("/").adapter.rooms.get(data.gameCode));
+      // console.log(`joinGame: `, io.of("/").adapter.rooms.get(data.gameCode));
     } else if (!room) {
       socket.emit("joinGameResponse", {
         response: `Room ${data.gameCode} doesn't exist. Please check the code`,
         playerId: -1,
       });
-      console.log(`Room ${data.gameCode} doesn't exist. Please check the code`);
+      // console.log(`Room ${data.gameCode} doesn't exist. Please check the code`);
     } else {
       socket.emit("joinGameResponse", {
         response: `Room ${data.gameCode} is full. Try another room`,
         playerId: -1,
       });
-      console.log(`Room ${data.gameCode} is full. Try another room`);
+      // console.log(`Room ${data.gameCode} is full. Try another room`);
     }
   });
 
@@ -98,7 +98,7 @@ io.on("connection", (socket) => {
   socket.on("getColor", (data) => {
     const meta = socketPlayerMapping.get(data.id);
     data = { ...data, color: meta.color, name: meta.name, position: meta.position };
-    console.log(data);
+    // console.log(data);
     io.of("/").to(data.gameCode).emit("setPlayerColor", data);
   });
 
@@ -151,12 +151,12 @@ io.on("connection", (socket) => {
     date_key += `${dd < 10 ? `0${dd}`: dd}-${mm < 10 ? `0${mm}`: mm}-${yyyy} `;
     date_key += `${hh < 10 ? `0${hh}`: hh}:${MM < 10 ? `0${MM}`: MM}:${ss < 10 ? `0${ss}`: ss}`;
     const key = `/${date_key}-${data.gameCode}`;
-    console.log(key, gameData);
+    // console.log(key, gameData);
     Firebase.database().ref(key).set(gameData);
   });
 
   socket.on("disconnect", () => {
-    console.log(`${socket.id} disconnected`);
+    // console.log(`${socket.id} disconnected`);
     socketPlayerMapping.delete(socket.id);
   });
 });

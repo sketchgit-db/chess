@@ -29,13 +29,13 @@ const Square: React.FC<SquareProps> = (props) => {
    * Shows the possible moves for the current square cell's piece
    */
   const showMoves = () => {
-    if (piece.pieceName !== null) {
-      console.log(
-        `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
-          8 - Math.floor(piece.position / 8)
-        }`
-      );
-    }
+    // if (piece.pieceName !== null) {
+    //   console.log(
+    //     `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
+    //       8 - Math.floor(piece.position / 8)
+    //     }`
+    //   );
+    // }
     props.onClick(piece);
   };
 
