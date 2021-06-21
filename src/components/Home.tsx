@@ -128,7 +128,7 @@ const Home: React.FC<HomeProps> = (props) => {
             Create a new game
           </Button>
           {/* Modal associated with Create New Game */}
-          <Modal show={createGame} onHide={hideCreateGameModal}>
+          <Modal show={createGame} backdrop="static" onHide={hideCreateGameModal}>
             <Modal.Header>
               <Modal.Title>Create a new game</Modal.Title>
             </Modal.Header>
@@ -156,9 +156,6 @@ const Home: React.FC<HomeProps> = (props) => {
             </Modal.Body>
 
             <Modal.Footer>
-              <Button variant="secondary" onClick={hideCreateGameModal}>
-                Close
-              </Button>
               <Button variant="primary" onClick={handleCreateGame}>
                 Start Game
               </Button>

@@ -29,7 +29,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.static(__dirname + "/build"));
+app.use(express.static(path.join(__dirname, "build")));
+app.use("/public", express.static(path.join(__dirname, "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
