@@ -84,7 +84,9 @@ const Game: React.FC<GameProps & RouteComponentProps<RouteParams>> = (props) => 
   useEffect(() => {
     socket.once("proposeDraw", (data) => {
       if (socket.id !== data.socket) {
-        // console.log(data.message);
+        if (process.env.NODE_ENV === "development") {
+          console.log(data.message);
+        }
         setShowDrawRequest(true);
       }
     });

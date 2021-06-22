@@ -241,13 +241,17 @@ class Moves {
         continue;
       } else if (Utils.getPieceName(this.BoardConfig[validKingMoves[pos]].piece) === null) {
         // empty cell not under attack => can move
-        // console.log("canKingMove - empty cell", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
+        if (process.env.NODE_ENV === "development") {
+          console.log("canKingMove - empty cell", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
+        }
         return true;
       } else {
         // capture by king
         const attackedPiece = this.BoardConfig[validKingMoves[pos]].piece;
         if (this.checkMoveSafety(kingPos, validKingMoves[pos], Utils.getPieceColor(attackedPiece))) {
-          // console.log("canKingMove - king capture", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
+          if (process.env.NODE_ENV === "development") {
+            console.log("canKingMove - king capture", kingPos, this.BoardConfig[validKingMoves[pos]].piece)
+          }
           return true;
         }
       }
@@ -277,14 +281,18 @@ class Moves {
     } else {
       const attacker = attacks[0];
       if (selfMoves.includes(attacker)) {
-        // console.log("capture by non - king ", attacker, selfMoves);
+        if (process.env.NODE_ENV === "development") {
+          console.log("capture by non - king ", attacker, selfMoves);
+        }
         // capture the attacking piece by non - king
         return false;
       } else if (
         validKingMoves.includes(attacker) &&
         this.checkMoveSafety(kingPos, attacker, Utils.getPieceColor(this.BoardConfig[attacker].piece))
       ) {
-        // console.log("capture by king", validKingMoves, attacker);
+        if (process.env.NODE_ENV === "development") {
+          console.log("capture by king", validKingMoves, attacker);
+        }
         // capture by king
         return false;
       } else if (this.canKingMove(kingPos, validKingMoves, oppMoves)) {
@@ -317,7 +325,9 @@ class Moves {
               available.push(Utils.getIndex(x, y0));
             }
           }
-          // console.log("insert a piece in the way ", selfMoves, available);
+          if (process.env.NODE_ENV === "development") {
+            console.log("insert a piece in the way ", selfMoves, available);
+          }
           for (let index = 0; index < available.length; index++) {
             if (selfMoves.includes(available[index])) {
               return false;

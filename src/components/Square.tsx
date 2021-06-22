@@ -8,8 +8,8 @@ export interface SquareProps {
   color: string /** The color of the square cell */;
   position: number /** The index [0, 64) of the square cell measured from a8 on the board */;
   piece: PieceProps /** The piece (if any) on the square cell */;
-  /** The onClick handler for the piece on the square cell */  
-  onClick: (piece: PieceProps) => any ;
+  /** The onClick handler for the piece on the square cell */
+  onClick: (piece: PieceProps) => any;
 }
 
 /**
@@ -20,7 +20,6 @@ export interface SquareProps {
  */
 
 const Square: React.FC<SquareProps> = (props) => {
-
   const className: string = props.color;
   const position: number = props.position;
   const piece: PieceProps = props.piece;
@@ -29,13 +28,13 @@ const Square: React.FC<SquareProps> = (props) => {
    * Shows the possible moves for the current square cell's piece
    */
   const showMoves = () => {
-    // if (piece.pieceName !== null) {
-    //   console.log(
-    //     `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${
-    //       8 - Math.floor(piece.position / 8)
-    //     }`
-    //   );
-    // }
+    if (piece.pieceName !== null) {
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `${piece.pieceName}: ${String.fromCharCode(97 + (piece.position % 8))}${8 - Math.floor(piece.position / 8)}`
+        );
+      }
+    }
     props.onClick(piece);
   };
 

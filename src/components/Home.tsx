@@ -87,8 +87,9 @@ const Home: React.FC<HomeProps> = (props) => {
       position: 0,
     });
     socket.once("createGameResponse", (res: any) => {
-      // console.log("Player 1 joined");
-      // console.log(res);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Player 1 joined", res);
+      }
       setWaitingMessage("Waiting for opponent to join ...");
     });
   };
@@ -104,13 +105,17 @@ const Home: React.FC<HomeProps> = (props) => {
     });
     socket.once("joinGameResponse", (res: any) => {
       if (res.response === "player joined") {
-        // console.log("Both players joined");
+        if (process.env.NODE_ENV === "development") {
+          console.log("Both players joined");
+        }
         setWaitingMessage("");
         setWrongCodeMessage("");
       } else {
         setWrongCodeMessage(res.response);
       }
-      // console.log(res);
+      if (process.env.NODE_ENV === "development") {
+        console.log(res);
+      }
     });
   };
 

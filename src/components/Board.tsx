@@ -199,7 +199,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("updateMoveTable", (data) => {
-      // console.log("+++ updateMoveTable +++", data);
+      if (process.env.NODE_ENV === "development") {
+        console.log("+++ updateMoveTable +++", data);
+      }
       setGameMoves((gameMoves) => [...gameMoves, data.move]);
       if (data.checkmate || data.stalemate) {
         socket.emit("game-complete", {
@@ -217,7 +219,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("nextTurn", (data) => {
-      // console.log(socket.id === data.socket ? "+++ moveSelf +++" : "+++ moveOpponent +++");
+      if (process.env.NODE_ENV === "development") {
+        console.log(socket.id === data.socket ? "+++ moveSelf +++" : "+++ moveOpponent +++");
+      }
       const [from, to, moveType, sockId] = [data.fromPiece, data.toPiece, data.moveType, data.socket];
       if (BoardConfig[data.fromPos].piece !== data.fromPiece) {
         BoardConfig[data.fromPos].setPiece(data.fromPiece);
@@ -245,7 +249,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("performCastling", (data) => {
-      // console.log("+++ performCastling +++", data);
+      if (process.env.NODE_ENV === "development") {
+        console.log("+++ performCastling +++", data);
+      }
       const [from, to, sockId] = [data.newRookPiece, data.newKingPiece, data.socket];
       if (BoardConfig[data.oldKingPos].piece !== data.oldKingPiece) {
         BoardConfig[data.oldKingPos].setPiece(data.oldKingPiece);
@@ -303,7 +309,9 @@ const Board: React.FC<BoardProps> = (props) => {
    */
   useEffect(() => {
     socket.once("markCheck", (data) => {
-      // console.log("King in check", data);
+      if (process.env.NODE_ENV === "development") {
+        console.log("King in check", data);
+      }
       BoardConfig[data.position].setColor(data.color);
       pieceInCheck = data.position;
     });
@@ -314,7 +322,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("unmarkCheck", (data) => {
-      // console.log("King avoided check", data);
+      if (process.env.NODE_ENV === "development") {
+        console.log("King avoided check", data);
+      }
       BoardConfig[data.position].setColor(data.color);
       pieceInCheck = -1;
     });
@@ -329,7 +339,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   useEffect(() => {
     socket.once("gameComplete", (data) => {
-      // console.log("+++ gameComplete +++", data);
+      if (process.env.NODE_ENV === "development") {
+        console.log("+++ gameComplete +++", data);
+      }
       setGameComplete(true);
       const message = data.result.outcome + " by " + data.result.message;
       setGameResult(message);
@@ -469,7 +481,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const performMove = (from: PieceProps, to: PieceProps) => {
     const [posFrom, posTo] = [from.position, to.position];
-    // console.log(`Making a move from ${posFrom} to ${posTo}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Making a move from ${posFrom} to ${posTo}`);
+    }
     to.position = posFrom;
     from.position = posTo;
     from.numMoves += 1;
@@ -493,7 +507,9 @@ const Board: React.FC<BoardProps> = (props) => {
 
   const performCapture = (from: PieceProps, to: PieceProps) => {
     const [posFrom, posTo] = [from.position, to.position];
-    // console.log(`Making a capture from ${posFrom} to ${posTo}`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`Making a capture from ${posFrom} to ${posTo}`);
+    }
     const emptyCell = utils.getEmptyCell(posFrom);
     from.position = posTo;
     to.position = posFrom;
@@ -607,7 +623,9 @@ const Board: React.FC<BoardProps> = (props) => {
     const color = utils.getPieceColor(toPiece);
     BoardConfig[fromPiece.position].piece = fromPiece;
     BoardConfig[toPiece.position].piece = toPiece;
-    // console.log("Check Status", fromPiece, toPiece, moveType);
+    if (process.env.NODE_ENV === "development") {
+      console.log("Check Status", fromPiece, toPiece, moveType);
+    }
 
     let result: Result = { outcome: "", message: "" };
 
